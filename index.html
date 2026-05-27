@@ -163,7 +163,6 @@
         .attendance-note { font-size: 0.75rem; color: #c7d2fe; margin-bottom: 12px; line-height: 1.35; }
         .auto-note { font-size: 0.75rem; color: #c7d2fe; margin-top: 8px; line-height: 1.35; }
 
-        /* --- Výber počtu osôb --- */
         .selection-btn {
             flex: 1;
             padding: 10px 6px;
@@ -235,7 +234,6 @@
 
         <div id="controlPanel" class="lg:w-96 p-8 border-r border-white/20">
 
-            <!-- Štatistiky zamestnancov -->
             <div class="flex flex-col gap-2 mb-5">
                 <div class="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-white/8 border border-white/12">
                     <span class="text-xs text-indigo-200 uppercase tracking-wide leading-tight">Počet všetkých zamestnancov<br>AOTPP BJ</span>
@@ -251,7 +249,6 @@
                 </div>
             </div>
 
-            <!-- Výber počtu osôb -->
             <div class="flex gap-2 mb-5">
                 <button class="selection-btn active" id="btn-select-1" onclick="setGroupSize(1)">
                     Výber<br>1 osoby
@@ -348,13 +345,13 @@
 
 <script>
     const firebaseConfig = {
-        apiKey: "AIzaSyD3nUBFbjbuI-KI4QuXCdq-GloIxRpAPkk",
-        authDomain: "losovac.firebaseapp.com",
-        databaseURL: "https://losovac-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "losovac",
-        storageBucket: "losovac.firebasestorage.app",
-        messagingSenderId: "1015590746910",
-        appId: "1:1015590746910:web:3c2e5c39fafa4fb4ba670f"
+        apiKey: "AIzaSyBM03HbWzmIOvPvmRxIr7APyc9gRC9vXoQ",
+        authDomain: "aotpp-vyber.firebaseapp.com",
+        databaseURL: "https://aotpp-vyber-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "aotpp-vyber",
+        storageBucket: "aotpp-vyber.firebasestorage.app",
+        messagingSenderId: "647716983311",
+        appId: "1:647716983311:web:cc1bdc5181287ac3f5497a"
     };
 
     const DEFAULT_NAMES = [
@@ -379,7 +376,6 @@
     let winnerPhaseInterval = null;
 
     const STEP_MS = 333;
-    // SHA-256 hashe hesiel – pôvodné heslá nie sú v kóde uložené
     const PASSWORD_HASH     = '961b6dd3ede3cb8ecbaacbd68de040cd78eb2ed5889130cceb4c49268ea4d506';
     const PAGE_PASSWORD_HASH = 'b3f0523331975dc864413e5f186a70b9c54bebe0811de8a5f02cb8ed8fd6868a';
 
@@ -393,7 +389,6 @@
             .join('');
     }
 
-    // ── Výber počtu losovaných osôb ──────────────────────────────────────────
     function setGroupSize(n) {
         selectedGroupSize = n;
         [1, 2, 3].forEach(i => {
@@ -411,7 +406,6 @@
         document.getElementById('countInactive').textContent = inactive;
     }
 
-    // ── Firebase ─────────────────────────────────────────────────────────────
     function initFirebase() {
         app = firebase.initializeApp(firebaseConfig);
         db = firebase.database();
@@ -431,16 +425,12 @@
             }
 
             if (snap.val()) {
-                // Zaregistruj tohto klienta v /presence s unikátnym kľúčom
                 const presenceRef = db.ref('presence').push();
-                // Pri odpojení (zatvorenie tabu, strata siete) Firebase
-                // automaticky vymaže tento záznam zo servera
                 presenceRef.onDisconnect().remove();
                 presenceRef.set(true);
             }
         });
 
-        // Sleduj počet pripojených klientov
         db.ref('presence').on('value', snap => {
             const count = snap.numChildren();
             document.getElementById('onlineCount2').textContent = count;
@@ -465,12 +455,8 @@
         const error = document.getElementById('loginError');
         const hash = await sha256(input.value);
         if (hash === PAGE_PASSWORD_HASH) {
-            if (sessionStorage.getItem('losovacPageUnlocked') === 'true') {
-            document.getElementById('loginOverlay').style.display = 'none';
-        } else {
-            input.focus();
-        }
             sessionStorage.setItem('losovacPageUnlocked', 'true');
+            document.getElementById('loginOverlay').style.display = 'none';
             return;
         }
         error.classList.remove('hidden');
@@ -489,7 +475,6 @@
         return false;
     }
 
-    // ── Seed / shuffle ───────────────────────────────────────────────────────
     function createRandomSeed() {
         const array = new Uint32Array(4);
         crypto.getRandomValues(array);
@@ -531,16 +516,6 @@
         return true;
     }
 
-    // ── Skupinové cykly ──────────────────────────────────────────────────────
-    /*
-     *  Pre groupSize = 1: správanie rovnaké ako pôvodný kód.
-     *  Pre groupSize = 2 alebo 3:
-     *    - v každom kole sa mená premiešajú (rovnaká logika ako doteraz)
-     *    - mená sa rozdelia na skupiny po groupSize
-     *    - ak počet mien nie je deliteľný groupSize, posledná skupina je kratšia
-     *    - každé kolo má iné poradie (ochrana proti opakovaniu rovnakého poradia)
-     */
-
     function getCycleNames(state, cycleNumber) {
         const names = state.names || state.activeNames || [];
         if (!names.length) return [];
@@ -568,9 +543,6 @@
         return result;
     }
 
-    // Vráti skupiny (polia mien) pre dané kolo s wrap-around:
-    // Ak posledná skupina kola nemá dostatok mien, doplní sa začiatkom
-    // nasledujúceho kola – takže každá skupina má vždy presne gs členov.
     function getCycleGroups(state, cycleNumber) {
         const shuffled = getCycleNames(state, cycleNumber);
         const gs = state.groupSize || 1;
@@ -580,18 +552,15 @@
         const remainder = n % gs;
         const groups = [];
 
-        // Celé skupiny bez problémov
         const fullCount = remainder === 0 ? n : n - remainder;
         for (let i = 0; i < fullCount; i += gs) {
             groups.push(shuffled.slice(i, i + gs));
         }
 
-        // Posledná neúplná skupina – doplníme zo začiatku nasledujúceho kola
         if (remainder !== 0) {
-            const lastGroup = shuffled.slice(fullCount); // remainder prvkov
+            const lastGroup = shuffled.slice(fullCount);
             const nextShuffled = getCycleNames(state, cycleNumber + 1);
             const needed = gs - remainder;
-            // Vezmeme prvých `needed` mien z nasledujúceho kola
             const extra = nextShuffled.slice(0, needed);
             groups.push([...lastGroup, ...extra]);
         }
@@ -609,8 +578,6 @@
         const stepMs = state.stepMs || STEP_MS;
         const elapsed = Math.max(0, Math.floor((timestamp - state.startTimestamp) / stepMs));
 
-        // Počet skupín v cykle – pri wrap-around je to Math.ceil, nie Math.floor
-        // (posledná skupina existuje, len je "roztiahnutá" cez hranicu kola)
         const groupsPerCycle = Math.ceil(names.length / gs);
 
         const cycleNumber = Math.floor(elapsed / groupsPerCycle);
@@ -629,7 +596,6 @@
         return getPositionAtTimestamp(state, serverNow()).group;
     }
 
-    // ── Render mien v display okne ───────────────────────────────────────────
     function renderGroupInDisplay(group) {
         const container = document.getElementById('currentName');
         container.innerHTML = '';
@@ -666,7 +632,6 @@
         adjustFontSize();
     }
 
-    // ── Flash mien v dolnom zozname ──────────────────────────────────────────
     function flashGroupInList(group) {
         if (!group || !group.length) return;
 
@@ -696,18 +661,14 @@
         }
     }
 
-    // ── Výber finálnej skupiny ───────────────────────────────────────────────
     function pickFinalGroup(names, groupSize, randomArray) {
         if (!names || !names.length) return ['Losovanie zastavené'];
         const gs = Math.min(groupSize || 1, names.length);
         if (gs === 1) {
             return [names[randomArray[0] % names.length]];
         }
-        // vyberieme gs unikátnych mien náhodne
         const shuffled = [...names];
-        // Fisher-Yates s randomArray seedom (jednoduchá verzia)
         for (let i = shuffled.length - 1; i > 0; i--) {
-            // použijeme rôzne prvky randomArray cyklicky
             const r = randomArray[i % randomArray.length];
             const j = r % (i + 1);
             [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -715,7 +676,6 @@
         return shuffled.slice(0, gs);
     }
 
-    // ── Dochádzka / zoznamy ──────────────────────────────────────────────────
     function renderAttendanceList(names, activeNames) {
         const container = document.getElementById('attendanceList');
         container.innerHTML = '';
@@ -768,7 +728,6 @@
         });
     }
 
-    // ── Font resize ──────────────────────────────────────────────────────────
     function adjustFontSize() {
         const container = document.getElementById('displayArea');
         const text = document.getElementById('currentName');
@@ -784,7 +743,6 @@
         }
     }
 
-    // ── Čas ──────────────────────────────────────────────────────────────────
     function makeTimestampFromTime(timeValue, baseTimestamp) {
         const [h, m] = timeValue.split(':').map(Number);
         const date = new Date(baseTimestamp);
@@ -801,7 +759,6 @@
         return date.getTime();
     }
 
-    // ── Build stavu ──────────────────────────────────────────────────────────
     function buildLotteryState(startTimestamp, targetTimestamp, targetTime, activeNames, groupSize) {
         const randomBaseSeed = createRandomSeed();
         return {
@@ -819,7 +776,6 @@
         };
     }
 
-    // ── UI ───────────────────────────────────────────────────────────────────
     function showRunningInfo(targetTime) {
         document.getElementById('controlPanel').classList.add('hidden');
         const info = document.getElementById('runningInfo');
@@ -833,7 +789,6 @@
         document.getElementById('runningInfo').classList.add('hidden');
     }
 
-    // ── Akcie ─────────────────────────────────────────────────────────────────
     async function startLosovanie() {
         if (!await checkPassword('štart')) return;
 
@@ -1003,7 +958,6 @@
         renderNamesList(allNames, allNames);
     }
 
-    // ── Striedanie textov po zastavení ──────────────────────────────────────
     function updateWinnerTimeInfo(fg) {
         const timeInfo = document.getElementById('timeInfo');
         const isMulti = fg && fg.length > 1;
@@ -1024,7 +978,6 @@
         winnerPhase = 0;
     }
 
-    // ── Tick ─────────────────────────────────────────────────────────────────
     function tick() {
         if (!remoteState) return;
 
@@ -1073,7 +1026,6 @@
 
             if (remainingMs <= 0) { stopLosovanie(false); return; }
 
-            // Vykreslíme zoznamy aj počas behu – nový klient ich musí vidieť správne
             if (!attendanceRenderedForState) {
                 allNames = [...stateAllNames];
                 renderAttendanceList(stateAllNames, stateActiveNames);
@@ -1098,7 +1050,6 @@
 
             document.getElementById('status').textContent = `ZASTAVENÉ na: ${fg.join(' & ')}`;
 
-            // Spustíme striedanie textov ak ešte nebežia
             if (!winnerPhaseInterval) {
                 winnerPhase = 0;
                 updateWinnerTimeInfo(fg);
@@ -1151,14 +1102,12 @@
             return;
         }
 
-        // Ak je v stave uložený groupSize, nastavíme tlačidlá podľa neho
         if (state.groupSize) setGroupSize(state.groupSize);
 
         tick();
         intervalId = setInterval(tick, STEP_MS);
     }
 
-    // ── Init ──────────────────────────────────────────────────────────────────
     window.addEventListener('load', () => {
         initFirebase();
         renderAttendanceList(allNames, allNames);

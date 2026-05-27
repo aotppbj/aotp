@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AOTPP</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        .name-display {
+            font-size: 4.5rem;
+            line-height: 1.05;
+            font-weight: 700;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: font-size 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            word-break: break-word;
+            padding: 0 20px;
+            position: relative;
+            z-index: 3;
+            gap: 8px;
+        }
+
+        .name-single {
+            display: block;
+            text-align: center;
+        }
+
+        .name-group-item {
+            display: block;
+            text-align: center;
+        }
+
+        .name-group-separator {
+            display: block;
+            font-size: 0.4em;
+            opacity: 0.55;
+            line-height: 1;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(0.97); }
+            to   { transform: scale(1.03); }
+        }
+
+        .running .name-display {
+            animation: pulse 0.8s infinite alternate ease-in-out;
+        }
+
+        .stopped .name-display {
+            animation: none;
+        }
+
+        #displayArea {
+            height: 360px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes nameFlashRed {
+            0%   { background-color: rgba(110,231,183,0.35); color: #6ee7b7; transform: scale(1.08); box-shadow: 0 0 22px rgba(110,231,183,0.6); }
+            50%  { background-color: rgba(110,231,183,0.18); color: #6ee7b7; transform: scale(1.04); box-shadow: 0 0 14px rgba(110,231,183,0.35); }
+            100% { background-color: rgba(255,255,255,0.10); color: white; transform: scale(1); box-shadow: none; }
+        }
+
+        .name-flash {
+            animation: nameFlashRed 0.45s ease-out;
+        }
+
+        .winner .name-display {
+            animation: none;
+            color: #00ff00;
+            text-shadow: none;
+            filter: none;
+        }
+
+        .winner-border {
+            display: none;
+            position: absolute;
+            inset: 18px;
+            border-radius: 24px;
+            border: 2px solid rgba(255,255,255,0.22);
+            pointer-events: none;
+            z-index: 2;
+            overflow: visible;
+            box-shadow: inset 0 0 22px rgba(255,255,255,0.10), 0 0 28px rgba(239,68,68,0.25);
+        }
+
+        .winner .winner-border { display: block; }
+
+        .winner-ball {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border-radius: 9999px;
+            z-index: 4;
+        }
+
+        .winner-ball.white { background: #ffffff; box-shadow: none; }
+
+        @keyframes runWinnerBorderClockwise {
+            0%   { left: 0;    top: 0;    transform: translate(-50%,-50%); }
+            25%  { left: 100%; top: 0;    transform: translate(-50%,-50%); }
+            50%  { left: 100%; top: 100%; transform: translate(-50%,-50%); }
+            75%  { left: 0;    top: 100%; transform: translate(-50%,-50%); }
+            100% { left: 0;    top: 0;    transform: translate(-50%,-50%); }
+        }
+
+        .winner-ball.ball-1 {
+            animation: runWinnerBorderClockwise 3.2s linear infinite;
+            animation-delay: 0s;
+        }
+
+        .attendance-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 10px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .attendance-row input {
+            width: 18px;
+            height: 18px;
+            accent-color: #10b981;
+            cursor: pointer;
+            flex: 0 0 auto;
+        }
+
+        .attendance-name { font-size: 0.95rem; color: white; font-weight: 600; }
+
+        .attendance-row.absent { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.45); }
+        .attendance-row.absent .attendance-name { color: #f87171; text-decoration: line-through; text-decoration-thickness: 2px; }
+
+        .name-chip.absent {
+            color: #f87171;
+            text-decoration: line-through;
+            text-decoration-thickness: 2px;
+            background: rgba(239,68,68,0.12);
+            border: 1px solid rgba(239,68,68,0.35);
+        }
+
+        .name-chip.flashing { animation: nameFlashRed 0.45s ease-out; }
+
+        .attendance-note { font-size: 0.75rem; color: #c7d2fe; margin-bottom: 12px; line-height: 1.35; }
+        .auto-note { font-size: 0.75rem; color: #c7d2fe; margin-top: 8px; line-height: 1.35; }
+
+        /* --- Výber počtu osôb --- */
+        .selection-btn {
+            flex: 1;
+            padding: 10px 6px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 0.78rem;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.65);
+            transition: all 0.18s;
+            line-height: 1.25;
+        }
+
+        .selection-btn:hover {
+            background: rgba(255,255,255,0.13);
+            color: white;
+        }
+
+        .selection-btn.active {
+            background: rgba(99,102,241,0.55);
+            border-color: #818cf8;
+            color: white;
+            box-shadow: 0 0 14px rgba(99,102,241,0.45);
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-indigo-900 to-purple-900 min-h-screen text-white flex items-center justify-center p-4">
+
+<div id="loginOverlay" class="fixed inset-0 z-50 bg-gradient-to-br from-indigo-950 to-purple-950 flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 text-center">
+        <h2 class="text-3xl font-bold text-emerald-300 mb-4">Prístup na stránku</h2>
+        <p class="text-indigo-200 text-sm mb-6">Zadajte heslo pre vstup do losovača.</p>
+        <input type="password" id="pagePasswordInput"
+               class="w-full bg-white/10 border border-white/30 rounded-2xl px-5 py-4 text-xl text-center text-white outline-none"
+               placeholder="Heslo">
+        <button onclick="unlockPage()"
+                class="mt-6 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xl py-4 rounded-3xl">
+            VSTÚPIŤ
+        </button>
+        <p id="loginError" class="hidden mt-4 text-red-400 font-semibold">Nesprávne heslo.</p>
+    </div>
+</div>
+
+<div class="max-w-4xl w-full bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+
+    <div class="px-8 py-6 border-b border-white/20 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <h1 class="text-4xl font-bold text-emerald-300">AOTPP výber</h1>
+            <div class="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 border border-white/20 rounded-2xl text-sm font-semibold text-white/80">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+                <span id="onlineCount2">0</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <div id="onlineCounter" class="px-4 py-2 bg-emerald-500/20 border border-emerald-400/30 rounded-2xl text-sm font-medium text-emerald-300 flex items-center gap-2">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                online
+            </div>
+            <div id="status" class="px-4 py-2 bg-white/10 rounded-2xl text-sm font-medium">Pripájam...</div>
+        </div>
+    </div>
+
+    <div class="flex flex-col lg:flex-row">
+
+        <div id="controlPanel" class="lg:w-96 p-8 border-r border-white/20">
+
+            <!-- Štatistiky zamestnancov -->
+            <div class="flex flex-col gap-2 mb-5">
+                <div class="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-white/8 border border-white/12">
+                    <span class="text-xs text-indigo-200 uppercase tracking-wide leading-tight">Počet všetkých zamestnancov<br>AOTPP BJ</span>
+                    <span id="countTotal" class="text-2xl font-bold text-white ml-3">0</span>
+                </div>
+                <div class="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-emerald-500/15 border border-emerald-400/25">
+                    <span class="text-xs text-emerald-300 uppercase tracking-wide leading-tight">Počet zaradených do výberu<br>(prítomní)</span>
+                    <span id="countActive" class="text-2xl font-bold text-emerald-300 ml-3">0</span>
+                </div>
+                <div class="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-red-500/12 border border-red-400/22">
+                    <span class="text-xs text-red-300 uppercase tracking-wide leading-tight">Počet nezaradených do výberu<br>(neprítomní)</span>
+                    <span id="countInactive" class="text-2xl font-bold text-red-300 ml-3">0</span>
+                </div>
+            </div>
+
+            <!-- Výber počtu osôb -->
+            <div class="flex gap-2 mb-5">
+                <button class="selection-btn active" id="btn-select-1" onclick="setGroupSize(1)">
+                    Výber<br>1 osoby
+                </button>
+                <button class="selection-btn" id="btn-select-2" onclick="setGroupSize(2)">
+                    Výber<br>2 osôb
+                </button>
+                <button class="selection-btn" id="btn-select-3" onclick="setGroupSize(3)">
+                    Výber<br>3 osôb
+                </button>
+            </div>
+
+            <p class="text-xs uppercase tracking-widest text-indigo-200 mb-2">Menný zoznam</p>
+            <p class="attendance-note">
+                (Zaškrtnuté mená sú zaradené do výberu. Odškrtnuté mená nie sú zahrnuté do výberu.)
+            </p>
+
+            <div id="attendanceList" class="space-y-2 max-h-72 overflow-y-auto pr-2"></div>
+
+            <div class="mt-6">
+                <label class="block text-sm mb-2">Automaticky spustiť o:</label>
+                <input type="time" id="autoStartTime"
+                       class="w-full bg-white/10 border border-white/30 rounded-2xl px-6 py-4 text-3xl text-center">
+                <p class="auto-note">
+                    Ak vyplníte čas a stlačíte „Naplánovať", losovanie sa spustí automaticky. Stránka musí byť vtedy otvorená.
+                </p>
+                <div class="flex gap-3 mt-3">
+                    <button onclick="scheduleAutoStart()"
+                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base py-4 rounded-3xl">
+                        NAPLÁNOVAŤ
+                    </button>
+                    <button onclick="cancelAutoStart()"
+                            class="flex-1 bg-slate-600 hover:bg-slate-700 text-white font-bold text-base py-4 rounded-3xl">
+                        ZRUŠIŤ PLÁN
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <label class="block text-sm mb-2">Zastaviť o:</label>
+                <input type="time" id="targetTime" value="10:00"
+                       class="w-full bg-white/10 border border-white/30 rounded-2xl px-6 py-4 text-3xl text-center">
+            </div>
+
+            <div class="flex gap-3 mt-8">
+                <button onclick="startLosovanie()" id="startBtn"
+                        class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xl py-6 rounded-3xl">
+                    ŠTART
+                </button>
+                <button onclick="manualStop()"
+                        class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xl py-6 rounded-3xl">
+                    STOP
+                </button>
+            </div>
+
+            <div class="mt-4">
+                <button onclick="resetLosovanie()"
+                        class="w-full bg-slate-600 hover:bg-slate-700 text-white font-bold text-xl py-5 rounded-3xl">
+                    RESET
+                </button>
+            </div>
+
+        </div>
+
+        <div id="runningInfo" class="hidden lg:w-96 p-8 border-r border-white/20 flex flex-col justify-center items-center text-center">
+            <h2 class="text-3xl font-bold text-emerald-300">Odpočítavanie bolo spustené</h2>
+            <p id="targetTimeDisplay" class="mt-6 text-xl"></p>
+        </div>
+
+        <div class="flex-1 flex flex-col">
+            <div id="displayArea"
+                 class="stopped bg-gradient-to-br from-purple-800/80 to-indigo-800/80 mx-8 mt-8 mb-4 rounded-3xl flex items-center justify-center">
+
+                <div class="winner-border">
+                    <span class="winner-ball white ball-1"></span>
+                </div>
+
+                <div id="currentName" class="name-display text-white">
+                    <span class="name-single">Čakám na štart...</span>
+                </div>
+            </div>
+
+            <div id="timeInfo" class="mx-8 mb-8 text-center text-lg font-medium"></div>
+        </div>
+
+    </div>
+
+    <div class="px-8 pb-8">
+        <p class="text-xs uppercase tracking-widest text-indigo-200 mb-3">Zamestnanci AOTPP BJ</p>
+        <div id="namesList" class="flex flex-wrap gap-2"></div>
+    </div>
+
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyD3nUBFbjbuI-KI4QuXCdq-GloIxRpAPkk",
+        authDomain: "losovac.firebaseapp.com",
+        databaseURL: "https://losovac-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "losovac",
+        storageBucket: "losovac.firebasestorage.app",
+        messagingSenderId: "1015590746910",
+        appId: "1:1015590746910:web:3c2e5c39fafa4fb4ba670f"
+    };
+
+    const DEFAULT_NAMES = [
+        'Monika B.','Eva B.','Jana B.','Ján D.','Eva F.',
+        'Adriána F.','Lukáš G.','Daniela H.','Miroslav H.','Lenka H.',
+        'Slavomíra J.','Gabriela K.','Rastislav K.','Radka K.','Alena K.',
+        'Svetlana K.','Gabriel L.','Silvia M.','Zuzana M.','Marcela N.',
+        'Klaudia O.','Igor P.','Martin P.','Vladislav P.','Mária S.',
+        'Monika S.','Silvia S.','Eva S.','Gabriela Š.','Lenka Š.','Lenka V.'
+    ];
+
+    let app, db;
+    let intervalId = null;
+    let serverTimeOffset = 0;
+    let remoteState = null;
+    let lastDisplayedGroup = [];
+    let allNames = [...DEFAULT_NAMES];
+    let attendanceRenderedForState = false;
+    let timeInputActive = false;
+    let selectedGroupSize = 1;
+    let winnerPhase = 0;
+    let winnerPhaseInterval = null;
+
+    const STEP_MS = 333;
+    // SHA-256 hashe hesiel – pôvodné heslá nie sú v kóde uložené
+    const PASSWORD_HASH     = '961b6dd3ede3cb8ecbaacbd68de040cd78eb2ed5889130cceb4c49268ea4d506';
+    const PAGE_PASSWORD_HASH = 'b3f0523331975dc864413e5f186a70b9c54bebe0811de8a5f02cb8ed8fd6868a';
+
+    async function sha256(text) {
+        const buf = await crypto.subtle.digest(
+            'SHA-256',
+            new TextEncoder().encode(text)
+        );
+        return Array.from(new Uint8Array(buf))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+    }
+
+    // ── Výber počtu losovaných osôb ──────────────────────────────────────────
+    function setGroupSize(n) {
+        selectedGroupSize = n;
+        [1, 2, 3].forEach(i => {
+            document.getElementById('btn-select-' + i).classList.toggle('active', i === n);
+        });
+    }
+
+    function updateCounters() {
+        const checkboxes = document.querySelectorAll('#attendanceList input[type="checkbox"]');
+        const total    = checkboxes.length;
+        const active   = Array.from(checkboxes).filter(c => c.checked).length;
+        const inactive = total - active;
+        document.getElementById('countTotal').textContent    = total;
+        document.getElementById('countActive').textContent   = active;
+        document.getElementById('countInactive').textContent = inactive;
+    }
+
+    // ── Firebase ─────────────────────────────────────────────────────────────
+    function initFirebase() {
+        app = firebase.initializeApp(firebaseConfig);
+        db = firebase.database();
+
+        db.ref('.info/serverTimeOffset').on('value', snap => {
+            serverTimeOffset = snap.val() || 0;
+        });
+
+        db.ref('losovac').on('value', snap => {
+            remoteState = snap.val();
+            applyRemoteState(remoteState);
+        });
+
+        db.ref('.info/connected').on('value', snap => {
+            if (!remoteState || !remoteState.isRunning) {
+                document.getElementById('status').textContent = snap.val() ? 'Pripojené' : 'Odpojené';
+            }
+
+            if (snap.val()) {
+                // Zaregistruj tohto klienta v /presence s unikátnym kľúčom
+                const presenceRef = db.ref('presence').push();
+                // Pri odpojení (zatvorenie tabu, strata siete) Firebase
+                // automaticky vymaže tento záznam zo servera
+                presenceRef.onDisconnect().remove();
+                presenceRef.set(true);
+            }
+        });
+
+        // Sleduj počet pripojených klientov
+        db.ref('presence').on('value', snap => {
+            const count = snap.numChildren();
+            document.getElementById('onlineCount2').textContent = count;
+        });
+    }
+
+    function setupTimeInputStability() {
+        ['autoStartTime', 'targetTime'].forEach(id => {
+            const input = document.getElementById(id);
+            if (!input) return;
+            ['focus','pointerdown','mousedown','touchstart'].forEach(ev =>
+                input.addEventListener(ev, () => { timeInputActive = true; })
+            );
+            ['blur','change'].forEach(ev =>
+                input.addEventListener(ev, () => { setTimeout(() => { timeInputActive = false; }, 400); })
+            );
+        });
+    }
+
+    async function unlockPage() {
+        const input = document.getElementById('pagePasswordInput');
+        const error = document.getElementById('loginError');
+        const hash = await sha256(input.value);
+        if (hash === PAGE_PASSWORD_HASH) {
+            if (sessionStorage.getItem('losovacPageUnlocked') === 'true') {
+            document.getElementById('loginOverlay').style.display = 'none';
+        } else {
+            input.focus();
+        }
+            sessionStorage.setItem('losovacPageUnlocked', 'true');
+            return;
+        }
+        error.classList.remove('hidden');
+        input.value = '';
+        input.focus();
+    }
+
+    function serverNow() { return Date.now() + serverTimeOffset; }
+
+    async function checkPassword(actionText) {
+        const password = prompt('Zadajte heslo na ' + actionText + ':');
+        if (password === null) return false;
+        const hash = await sha256(password);
+        if (hash === PASSWORD_HASH) return true;
+        alert('Nesprávne heslo.');
+        return false;
+    }
+
+    // ── Seed / shuffle ───────────────────────────────────────────────────────
+    function createRandomSeed() {
+        const array = new Uint32Array(4);
+        crypto.getRandomValues(array);
+        return Array.from(array).join('-') + '-' + Date.now() + '-' + Math.random();
+    }
+
+    function hashString(text) {
+        let hash = 2166136261;
+        for (let i = 0; i < text.length; i++) {
+            hash ^= text.charCodeAt(i);
+            hash = Math.imul(hash, 16777619);
+        }
+        return hash >>> 0;
+    }
+
+    function seededRandom(seedText) {
+        let seed = hashString(seedText);
+        return function() {
+            seed = Math.imul(seed, 1664525) + 1013904223;
+            seed = seed >>> 0;
+            return seed / 4294967296;
+        };
+    }
+
+    function shuffleBySeed(array, seedText) {
+        const arr = [...array];
+        const random = seededRandom(seedText);
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    function arraysEqual(a, b) {
+        if (!Array.isArray(a) || !Array.isArray(b)) return false;
+        if (a.length !== b.length) return false;
+        for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+        return true;
+    }
+
+    // ── Skupinové cykly ──────────────────────────────────────────────────────
+    /*
+     *  Pre groupSize = 1: správanie rovnaké ako pôvodný kód.
+     *  Pre groupSize = 2 alebo 3:
+     *    - v každom kole sa mená premiešajú (rovnaká logika ako doteraz)
+     *    - mená sa rozdelia na skupiny po groupSize
+     *    - ak počet mien nie je deliteľný groupSize, posledná skupina je kratšia
+     *    - každé kolo má iné poradie (ochrana proti opakovaniu rovnakého poradia)
+     */
+
+    function getCycleNames(state, cycleNumber) {
+        const names = state.names || state.activeNames || [];
+        if (!names.length) return [];
+
+        let attempt = 0;
+        let result = [];
+
+        do {
+            const seed =
+                (state.randomBaseSeed || 'fallback-seed') +
+                '|repeat|' + cycleNumber +
+                '|attempt|' + attempt +
+                '|names|' + names.join('|');
+
+            result = shuffleBySeed(names, seed);
+
+            if (cycleNumber === 0) return result;
+
+            const previous = getCycleNames(state, cycleNumber - 1);
+            if (!arraysEqual(result, previous)) return result;
+
+            attempt++;
+        } while (attempt < 20);
+
+        return result;
+    }
+
+    // Vráti skupiny (polia mien) pre dané kolo s wrap-around:
+    // Ak posledná skupina kola nemá dostatok mien, doplní sa začiatkom
+    // nasledujúceho kola – takže každá skupina má vždy presne gs členov.
+    function getCycleGroups(state, cycleNumber) {
+        const shuffled = getCycleNames(state, cycleNumber);
+        const gs = state.groupSize || 1;
+        if (gs === 1) return shuffled.map(n => [n]);
+
+        const n = shuffled.length;
+        const remainder = n % gs;
+        const groups = [];
+
+        // Celé skupiny bez problémov
+        const fullCount = remainder === 0 ? n : n - remainder;
+        for (let i = 0; i < fullCount; i += gs) {
+            groups.push(shuffled.slice(i, i + gs));
+        }
+
+        // Posledná neúplná skupina – doplníme zo začiatku nasledujúceho kola
+        if (remainder !== 0) {
+            const lastGroup = shuffled.slice(fullCount); // remainder prvkov
+            const nextShuffled = getCycleNames(state, cycleNumber + 1);
+            const needed = gs - remainder;
+            // Vezmeme prvých `needed` mien z nasledujúceho kola
+            const extra = nextShuffled.slice(0, needed);
+            groups.push([...lastGroup, ...extra]);
+        }
+
+        return groups;
+    }
+
+    function getPositionAtTimestamp(state, timestamp) {
+        const names = state.names || state.activeNames || [];
+        if (!state || names.length === 0) {
+            return { absoluteStep: 0, cycleNumber: 0, indexInCycle: 0, group: [] };
+        }
+
+        const gs = state.groupSize || 1;
+        const stepMs = state.stepMs || STEP_MS;
+        const elapsed = Math.max(0, Math.floor((timestamp - state.startTimestamp) / stepMs));
+
+        // Počet skupín v cykle – pri wrap-around je to Math.ceil, nie Math.floor
+        // (posledná skupina existuje, len je "roztiahnutá" cez hranicu kola)
+        const groupsPerCycle = Math.ceil(names.length / gs);
+
+        const cycleNumber = Math.floor(elapsed / groupsPerCycle);
+        const indexInCycle = elapsed % groupsPerCycle;
+        const groups = getCycleGroups(state, cycleNumber);
+
+        return {
+            absoluteStep: elapsed,
+            cycleNumber: cycleNumber,
+            indexInCycle: indexInCycle,
+            group: groups[indexInCycle] || []
+        };
+    }
+
+    function getCurrentGroup(state) {
+        return getPositionAtTimestamp(state, serverNow()).group;
+    }
+
+    // ── Render mien v display okne ───────────────────────────────────────────
+    function renderGroupInDisplay(group) {
+        const container = document.getElementById('currentName');
+        container.innerHTML = '';
+
+        if (!group || group.length === 0) {
+            const span = document.createElement('span');
+            span.className = 'name-single';
+            span.textContent = 'Čakám na štart...';
+            container.appendChild(span);
+            adjustFontSize();
+            return;
+        }
+
+        if (group.length === 1) {
+            const span = document.createElement('span');
+            span.className = 'name-single';
+            span.textContent = group[0];
+            container.appendChild(span);
+        } else {
+            group.forEach((name, idx) => {
+                if (idx > 0) {
+                    const sep = document.createElement('span');
+                    sep.className = 'name-group-separator';
+                    sep.textContent = '&';
+                    container.appendChild(sep);
+                }
+                const span = document.createElement('span');
+                span.className = 'name-group-item';
+                span.textContent = name;
+                container.appendChild(span);
+            });
+        }
+
+        adjustFontSize();
+    }
+
+    // ── Flash mien v dolnom zozname ──────────────────────────────────────────
+    function flashGroupInList(group) {
+        if (!group || !group.length) return;
+
+        const allNameItems = document.querySelectorAll('#namesList [data-name]');
+        allNameItems.forEach(item => {
+            if (group.includes(item.dataset.name)) {
+                item.classList.remove('name-flash');
+                void item.offsetWidth;
+                item.classList.add('name-flash');
+                setTimeout(() => item.classList.remove('name-flash'), 500);
+            }
+        });
+    }
+
+    function groupsEqual(a, b) {
+        if (!Array.isArray(a) || !Array.isArray(b)) return false;
+        if (a.length !== b.length) return false;
+        return a.every((v, i) => v === b[i]);
+    }
+
+    function setDisplayGroup(group) {
+        renderGroupInDisplay(group);
+
+        if (remoteState && remoteState.isRunning && group && group.length && !groupsEqual(group, lastDisplayedGroup)) {
+            flashGroupInList(group);
+            lastDisplayedGroup = [...group];
+        }
+    }
+
+    // ── Výber finálnej skupiny ───────────────────────────────────────────────
+    function pickFinalGroup(names, groupSize, randomArray) {
+        if (!names || !names.length) return ['Losovanie zastavené'];
+        const gs = Math.min(groupSize || 1, names.length);
+        if (gs === 1) {
+            return [names[randomArray[0] % names.length]];
+        }
+        // vyberieme gs unikátnych mien náhodne
+        const shuffled = [...names];
+        // Fisher-Yates s randomArray seedom (jednoduchá verzia)
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            // použijeme rôzne prvky randomArray cyklicky
+            const r = randomArray[i % randomArray.length];
+            const j = r % (i + 1);
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled.slice(0, gs);
+    }
+
+    // ── Dochádzka / zoznamy ──────────────────────────────────────────────────
+    function renderAttendanceList(names, activeNames) {
+        const container = document.getElementById('attendanceList');
+        container.innerHTML = '';
+        names.forEach(name => {
+            const isActive = activeNames.includes(name);
+            const label = document.createElement('label');
+            label.className = 'attendance-row' + (isActive ? '' : ' absent');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = isActive;
+            checkbox.dataset.name = name;
+            checkbox.addEventListener('change', updateAttendanceDisplay);
+            const span = document.createElement('span');
+            span.className = 'attendance-name';
+            span.textContent = name;
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            container.appendChild(label);
+        });
+        updateCounters();
+    }
+
+    function getActiveNames() {
+        return Array.from(document.querySelectorAll('#attendanceList input[type="checkbox"]'))
+            .filter(input => input.checked)
+            .map(input => input.dataset.name);
+    }
+
+    function updateAttendanceDisplay() {
+        const activeNames = getActiveNames();
+        document.querySelectorAll('.attendance-row').forEach(row => {
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            row.classList.toggle('absent', !checkbox.checked);
+        });
+        renderNamesList(allNames, activeNames);
+        updateCounters();
+    }
+
+    function renderNamesList(names, activeNames) {
+        const container = document.getElementById('namesList');
+        container.innerHTML = '';
+        names.forEach(name => {
+            const isActive = activeNames.includes(name);
+            const div = document.createElement('div');
+            div.className = 'name-chip text-sm px-4 py-2 rounded-3xl transition-all duration-200 ' +
+                (isActive ? 'bg-white/10 text-white' : 'absent');
+            div.textContent = name;
+            div.dataset.name = name;
+            container.appendChild(div);
+        });
+    }
+
+    // ── Font resize ──────────────────────────────────────────────────────────
+    function adjustFontSize() {
+        const container = document.getElementById('displayArea');
+        const text = document.getElementById('currentName');
+        let size = 160;
+        text.style.fontSize = size + 'px';
+        while (
+            (text.scrollHeight > container.clientHeight - 60 ||
+             text.scrollWidth > container.clientWidth - 60) &&
+            size > 28
+        ) {
+            size -= 4;
+            text.style.fontSize = size + 'px';
+        }
+    }
+
+    // ── Čas ──────────────────────────────────────────────────────────────────
+    function makeTimestampFromTime(timeValue, baseTimestamp) {
+        const [h, m] = timeValue.split(':').map(Number);
+        const date = new Date(baseTimestamp);
+        date.setHours(h, m, 0, 0);
+        if (date.getTime() <= baseTimestamp) date.setDate(date.getDate() + 1);
+        return date.getTime();
+    }
+
+    function makeStopTimestampFromTime(targetTime, scheduledStartTimestamp) {
+        const [h, m] = targetTime.split(':').map(Number);
+        const date = new Date(scheduledStartTimestamp);
+        date.setHours(h, m, 0, 0);
+        if (date.getTime() <= scheduledStartTimestamp) date.setDate(date.getDate() + 1);
+        return date.getTime();
+    }
+
+    // ── Build stavu ──────────────────────────────────────────────────────────
+    function buildLotteryState(startTimestamp, targetTimestamp, targetTime, activeNames, groupSize) {
+        const randomBaseSeed = createRandomSeed();
+        return {
+            startTimestamp: startTimestamp,
+            targetTimestamp: targetTimestamp,
+            randomBaseSeed: randomBaseSeed,
+            names: activeNames,
+            allNames: allNames,
+            activeNames: activeNames,
+            groupSize: groupSize,
+            stopped: false,
+            manuallyStopped: false,
+            targetTime: targetTime,
+            stepMs: STEP_MS
+        };
+    }
+
+    // ── UI ───────────────────────────────────────────────────────────────────
+    function showRunningInfo(targetTime) {
+        document.getElementById('controlPanel').classList.add('hidden');
+        const info = document.getElementById('runningInfo');
+        info.classList.remove('hidden');
+        document.getElementById('targetTimeDisplay').innerHTML =
+            `Zastaví sa o <strong class="text-4xl">${targetTime}</strong>`;
+    }
+
+    function showControlPanel() {
+        document.getElementById('controlPanel').classList.remove('hidden');
+        document.getElementById('runningInfo').classList.add('hidden');
+    }
+
+    // ── Akcie ─────────────────────────────────────────────────────────────────
+    async function startLosovanie() {
+        if (!await checkPassword('štart')) return;
+
+        const activeNames = getActiveNames();
+        const gs = selectedGroupSize;
+
+        if (activeNames.length < gs + 1) {
+            return alert(`Na losovanie skupín po ${gs} musia byť prítomné aspoň ${gs + 1} osoby.`);
+        }
+
+        const targetTime = document.getElementById('targetTime').value;
+        if (!targetTime) return alert('Zadajte čas zastavenia.');
+
+        const startTimestamp = serverNow();
+        const targetTimestamp = makeStopTimestampFromTime(targetTime, startTimestamp);
+
+        lastDisplayedGroup = [];
+        attendanceRenderedForState = false;
+        timeInputActive = false;
+
+        db.ref('losovac').set({
+            ...buildLotteryState(startTimestamp, targetTimestamp, targetTime, activeNames, gs),
+            isRunning: true,
+            scheduled: false
+        });
+    }
+
+    async function scheduleAutoStart() {
+        if (!await checkPassword('naplánovanie automatického štartu')) return;
+
+        const activeNames = getActiveNames();
+        const gs = selectedGroupSize;
+
+        if (activeNames.length < gs + 1) {
+            return alert(`Na losovanie skupín po ${gs} musia byť prítomné aspoň ${gs + 1} osoby.`);
+        }
+
+        const autoStartTime = document.getElementById('autoStartTime').value;
+        const targetTime = document.getElementById('targetTime').value;
+        if (!autoStartTime) return alert('Zadajte čas automatického spustenia.');
+        if (!targetTime) return alert('Zadajte čas zastavenia.');
+
+        const now = serverNow();
+        const scheduledStartTimestamp = makeTimestampFromTime(autoStartTime, now);
+        const targetTimestamp = makeStopTimestampFromTime(targetTime, scheduledStartTimestamp);
+
+        lastDisplayedGroup = [];
+        attendanceRenderedForState = false;
+        timeInputActive = false;
+
+        db.ref('losovac').set({
+            ...buildLotteryState(scheduledStartTimestamp, targetTimestamp, targetTime, activeNames, gs),
+            isRunning: false,
+            scheduled: true,
+            scheduledStartTimestamp: scheduledStartTimestamp,
+            autoStartTime: autoStartTime
+        });
+
+        alert('Automatický štart bol naplánovaný na ' + autoStartTime + '.');
+    }
+
+    async function cancelAutoStart() {
+        if (!remoteState || !remoteState.scheduled) {
+            alert('Nie je naplánovaný žiadny automatický štart.');
+            return;
+        }
+        if (!await checkPassword('zrušenie automatického štartu')) return;
+
+        db.ref('losovac').remove();
+        remoteState = null;
+        lastDisplayedGroup = [];
+        attendanceRenderedForState = false;
+        timeInputActive = false;
+
+        const displayArea = document.getElementById('displayArea');
+        displayArea.classList.add('stopped');
+        displayArea.classList.remove('running', 'winner');
+
+        renderGroupInDisplay([]);
+        document.getElementById('timeInfo').textContent = '';
+        document.getElementById('status').textContent = 'Pripojené';
+
+        showControlPanel();
+        renderAttendanceList(allNames, allNames);
+        renderNamesList(allNames, allNames);
+    }
+
+    function startScheduledLosovanie() {
+        db.ref('losovac').transaction(current => {
+            if (!current || !current.scheduled || current.isRunning || current.stopped) return current;
+            if (serverNow() < current.scheduledStartTimestamp) return current;
+            return { ...current, scheduled: false, isRunning: true, startTimestamp: current.scheduledStartTimestamp };
+        });
+    }
+
+    function stopLosovanie(manuallyStopped) {
+        const stopTimestamp = manuallyStopped ? serverNow() : null;
+        const randomArray = new Uint32Array(8);
+        crypto.getRandomValues(randomArray);
+
+        db.ref('losovac').transaction(current => {
+            if (!current || current.stopped || !current.isRunning) return current;
+
+            const names = current.names || current.activeNames || [];
+            const gs = current.groupSize || 1;
+
+            if (!names.length) {
+                return {
+                    ...current,
+                    isRunning: false,
+                    scheduled: false,
+                    stopped: true,
+                    manuallyStopped: !!manuallyStopped,
+                    finalGroup: ['Losovanie zastavené'],
+                    stoppedAt: manuallyStopped ? stopTimestamp : current.targetTimestamp
+                };
+            }
+
+            const effectiveStopTimestamp = manuallyStopped ? stopTimestamp : current.targetTimestamp;
+            const finalGroup = pickFinalGroup(names, gs, Array.from(randomArray));
+
+            return {
+                ...current,
+                isRunning: false,
+                scheduled: false,
+                stopped: true,
+                manuallyStopped: !!manuallyStopped,
+                finalGroup: finalGroup,
+                stoppedAt: effectiveStopTimestamp
+            };
+        });
+    }
+
+    async function manualStop() {
+        if (!remoteState || !remoteState.isRunning) {
+            alert('Losovanie momentálne nebeží.');
+            return;
+        }
+        if (!await checkPassword('zastavenie')) return;
+        stopLosovanie(true);
+    }
+
+    async function resetLosovanie() {
+        if (!await checkPassword('reset')) return;
+
+        db.ref('losovac').remove();
+
+        remoteState = null;
+        lastDisplayedGroup = [];
+        allNames = [...DEFAULT_NAMES];
+        attendanceRenderedForState = false;
+        timeInputActive = false;
+
+        if (intervalId) { clearInterval(intervalId); intervalId = null; }
+        clearWinnerPhase();
+
+        const displayArea = document.getElementById('displayArea');
+        displayArea.classList.add('stopped');
+        displayArea.classList.remove('running', 'winner');
+
+        renderGroupInDisplay([]);
+        document.getElementById('timeInfo').textContent = '';
+        document.getElementById('status').textContent = 'Pripojené';
+
+        showControlPanel();
+        renderAttendanceList(allNames, allNames);
+        renderNamesList(allNames, allNames);
+    }
+
+    // ── Striedanie textov po zastavení ──────────────────────────────────────
+    function updateWinnerTimeInfo(fg) {
+        const timeInfo = document.getElementById('timeInfo');
+        const isMulti = fg && fg.length > 1;
+        if (winnerPhase === 0) {
+            timeInfo.textContent = 'Výber ukončený.';
+        } else {
+            timeInfo.textContent = isMulti
+                ? (fg.length >= 3 ? 'Výhercom gratulujeme! 😄😄😄' : 'Výhercom gratulujeme! 😄😄')
+                : 'Výhercovi gratulujeme! 😄';
+        }
+    }
+
+    function clearWinnerPhase() {
+        if (winnerPhaseInterval) {
+            clearInterval(winnerPhaseInterval);
+            winnerPhaseInterval = null;
+        }
+        winnerPhase = 0;
+    }
+
+    // ── Tick ─────────────────────────────────────────────────────────────────
+    function tick() {
+        if (!remoteState) return;
+
+        if (timeInputActive && !remoteState.isRunning) {
+            if (remoteState.scheduled && !remoteState.stopped) {
+                const remainingMs = remoteState.scheduledStartTimestamp - serverNow();
+                if (remainingMs <= 0) { timeInputActive = false; startScheduledLosovanie(); }
+            }
+            return;
+        }
+
+        const displayArea = document.getElementById('displayArea');
+        const timeInfo = document.getElementById('timeInfo');
+
+        const stateAllNames = remoteState.allNames || remoteState.names || [];
+        const stateActiveNames = remoteState.activeNames || remoteState.names || [];
+
+        if (remoteState.scheduled && !remoteState.isRunning && !remoteState.stopped) {
+            const remainingMs = remoteState.scheduledStartTimestamp - serverNow();
+            displayArea.classList.add('stopped');
+            displayArea.classList.remove('running', 'winner');
+            showControlPanel();
+
+            if (!attendanceRenderedForState) {
+                allNames = [...stateAllNames];
+                renderAttendanceList(stateAllNames, stateActiveNames);
+                renderNamesList(stateAllNames, stateActiveNames);
+                attendanceRenderedForState = true;
+            }
+
+            if (remainingMs <= 0) { startScheduledLosovanie(); return; }
+
+            const totalSeconds = Math.ceil(remainingMs / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+
+            renderGroupInDisplay(['Automatický štart naplánovaný']);
+            timeInfo.textContent = `Spustí sa o ${remoteState.autoStartTime}. Zostáva: ${minutes}:${String(seconds).padStart(2, '0')}`;
+            document.getElementById('status').textContent = `NAPLÁNOVANÉ na: ${remoteState.autoStartTime}`;
+
+        } else if (remoteState.isRunning) {
+            const remainingMs = remoteState.targetTimestamp - serverNow();
+            displayArea.classList.add('running');
+            displayArea.classList.remove('stopped', 'winner');
+            showRunningInfo(remoteState.targetTime);
+
+            if (remainingMs <= 0) { stopLosovanie(false); return; }
+
+            // Vykreslíme zoznamy aj počas behu – nový klient ich musí vidieť správne
+            if (!attendanceRenderedForState) {
+                allNames = [...stateAllNames];
+                renderAttendanceList(stateAllNames, stateActiveNames);
+                renderNamesList(stateAllNames, stateActiveNames);
+                attendanceRenderedForState = true;
+            }
+
+            setDisplayGroup(getCurrentGroup(remoteState));
+
+            const totalSeconds = Math.ceil(remainingMs / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            timeInfo.textContent = `Zostáva: ${minutes}:${String(seconds).padStart(2, '0')}`;
+            document.getElementById('status').textContent = 'LIVE – spustené';
+
+        } else if (remoteState.stopped) {
+            displayArea.classList.add('stopped', 'winner');
+            displayArea.classList.remove('running');
+
+            const fg = remoteState.finalGroup || ['Výber ukončený'];
+            setDisplayGroup(fg);
+
+            document.getElementById('status').textContent = `ZASTAVENÉ na: ${fg.join(' & ')}`;
+
+            // Spustíme striedanie textov ak ešte nebežia
+            if (!winnerPhaseInterval) {
+                winnerPhase = 0;
+                updateWinnerTimeInfo(fg);
+                winnerPhaseInterval = setInterval(() => {
+                    winnerPhase = 1 - winnerPhase;
+                    updateWinnerTimeInfo(fg);
+                }, 5000);
+            }
+
+            showControlPanel();
+
+            if (!attendanceRenderedForState) {
+                allNames = [...stateAllNames];
+                renderAttendanceList(stateAllNames, stateActiveNames);
+                renderNamesList(stateAllNames, stateActiveNames);
+                attendanceRenderedForState = true;
+            }
+
+        } else {
+            displayArea.classList.add('stopped');
+            displayArea.classList.remove('running', 'winner');
+            renderGroupInDisplay([]);
+            timeInfo.textContent = '';
+            document.getElementById('status').textContent = 'Pripojené';
+            showControlPanel();
+
+            if (!attendanceRenderedForState) {
+                renderAttendanceList(allNames, allNames);
+                renderNamesList(allNames, allNames);
+                attendanceRenderedForState = true;
+            }
+        }
+    }
+
+    function applyRemoteState(state) {
+        if (intervalId) { clearInterval(intervalId); intervalId = null; }
+        clearWinnerPhase();
+        attendanceRenderedForState = false;
+
+        if (!state) {
+            showControlPanel();
+            renderAttendanceList(allNames, allNames);
+            renderNamesList(allNames, allNames);
+            renderGroupInDisplay([]);
+            document.getElementById('timeInfo').textContent = '';
+            document.getElementById('status').textContent = 'Pripojené';
+            document.getElementById('displayArea').classList.remove('winner');
+            lastDisplayedGroup = [];
+            attendanceRenderedForState = true;
+            return;
+        }
+
+        // Ak je v stave uložený groupSize, nastavíme tlačidlá podľa neho
+        if (state.groupSize) setGroupSize(state.groupSize);
+
+        tick();
+        intervalId = setInterval(tick, STEP_MS);
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    window.addEventListener('load', () => {
+        initFirebase();
+        renderAttendanceList(allNames, allNames);
+        renderNamesList(allNames, allNames);
+        setupTimeInputStability();
+
+        const input = document.getElementById('pagePasswordInput');
+        if (sessionStorage.getItem('losovacPageUnlocked') === 'true') {
+            document.getElementById('loginOverlay').style.display = 'none';
+        } else {
+            input.focus();
+        }
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') unlockPage(); });
+
+        document.addEventListener('keydown', e => {
+            if (e.ctrlKey && e.altKey && e.key === '0') {
+                document.getElementById('loginOverlay').style.display = 'none';
+                sessionStorage.setItem('losovacPageUnlocked', 'true');
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

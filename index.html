@@ -756,13 +756,11 @@
         });
     }
 
-    // Vypočíta veľkosť písma bez toho aby menila DOM – použije offscreen klon
     function calcFontSizeOnly(maxStart) {
         const container = document.getElementById('displayArea');
         const text = document.getElementById('currentName');
         const containerW = container.clientWidth - 60;
         const containerH = container.clientHeight - 60;
-        // Použijeme binárne hľadanie namiesto loop
         let lo = 28, hi = maxStart, best = 28;
         while (lo <= hi) {
             const mid = Math.floor((lo + hi) / 2);
@@ -788,7 +786,6 @@
         winnerAnimating = true;
         const nameEl = document.getElementById('currentName');
 
-        // Vypneme transition aby animácia bola plynulá cez JS
         nameEl.style.transition = 'none';
 
         const normalSize = calcFontSizeOnly(260);
@@ -800,9 +797,13 @@
         let blinks = 0;
 
         function fadeOut() {
-            if (blinks >= 3) { startGrow(); return; }
+            if (blinks >= 3) {
+                startSmoothGrowth();
+                return;
+            }
             animOpacity(nameEl, 1, 0.05, 1000, fadeIn);
         }
+
         function fadeIn() {
             animOpacity(nameEl, 0.05, 1, 1000, () => {
                 blinks++;
@@ -810,14 +811,16 @@
             });
         }
 
-        function startGrow() {
-            const growDuration = 3000;
+        function startSmoothGrowth() {
+            const growDuration = 1400;
             const startTime = performance.now();
+
             function step(now) {
                 const t = Math.min((now - startTime) / growDuration, 1);
                 const eased = 1 - Math.pow(1 - t, 3);
                 nameEl.style.fontSize = Math.round(normalSize + (bigSize - normalSize) * eased) + 'px';
-                nameEl.style.opacity = String(0.15 + 0.85 * Math.abs(Math.sin(t * Math.PI * 4)));
+                nameEl.style.opacity = String(0.05 + 0.95 * eased);
+
                 if (t < 1) {
                     requestAnimationFrame(step);
                 } else {

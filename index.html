@@ -693,7 +693,6 @@
         text.style.fontSize = size + 'px';
     }
 
-    // === OPRÁVENÁ ANIMÁCIA – 3× bliknutie + OKAMŽITÉ zväčšenie pri treťom bliknutí ===
     function playWinnerReveal() {
         winnerAnimating = true;
         winnerFinalized = false;
@@ -711,11 +710,8 @@
 
         function fadeOut() {
             if (blinks >= 3) {
-                // OKAMŽITÉ zväčšenie naraz – žiadny efekt, žiadne plynulé zväčšovanie
-                nameEl.style.fontSize = bigSize + 'px';
-                nameEl.style.opacity = '1';
-                winnerAnimating = false;
-                winnerFinalized = true;
+                // tretie zahasnutie je v rovnakej (malej) veľkosti
+                startSmoothGrowth();
                 return;
             }
             animOpacity(nameEl, 1, 0.08, 850, fadeIn);
@@ -728,7 +724,31 @@
             });
         }
 
-        fadeOut(); // spustí prvý cyklus
+        function startSmoothGrowth() {
+            const duration = 1400;
+            const startTime = performance.now();
+
+            function animate(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+
+                nameEl.style.fontSize = Math.round(normalSize + (bigSize - normalSize) * eased) + 'px';
+                nameEl.style.opacity = String(0.08 + 0.92 * eased);
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    nameEl.style.fontSize = bigSize + 'px';
+                    nameEl.style.opacity = '1';
+                    winnerAnimating = false;
+                    winnerFinalized = true;
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        fadeOut();
     }
 
     function animOpacity(el, from, to, duration, onDone) {

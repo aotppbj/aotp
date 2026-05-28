@@ -68,15 +68,14 @@
             animation: none;
         }
 
-        /* NOVÉ: pomalé blikanie času pri ≤ 30 sekundách */
-        @keyframes countdownCritical {
-            0%, 100% { color: #ffffff; }
-            50%      { color: #ef4444; }
+        /* NOVÉ: pomalé blikanie spodného textu (Výber ukončený + gratulácie) počas víťaza */
+        @keyframes winnerInfoBlink {
+            0%, 100% { opacity: 1; color: #ffffff; }
+            50%      { opacity: 0.55; color: #a3e4c5; }
         }
 
-        .countdown-critical {
-            animation: countdownCritical 1.4s infinite ease-in-out;
-            font-weight: 700;
+        .winner-info-blink {
+            animation: winnerInfoBlink 2.2s infinite ease-in-out;
         }
 
         #displayArea {
@@ -1116,6 +1115,7 @@
         winnerPhase = 0;
         winnerAnimating = false;
         winnerFinalized = false;
+        document.getElementById('timeInfo').classList.remove('winner-info-blink');
     }
 
     function highlightPermanentWinner(fg) {
@@ -1169,6 +1169,7 @@
             timeInfo.textContent = `Spustí sa o ${remoteState.autoStartTime}. Zostáva: ${minutes}:${String(seconds).padStart(2, '0')}`;
             document.getElementById('status').textContent = `NAPLÁNOVANÉ na: ${remoteState.autoStartTime}`;
             document.getElementById('winnerResetBtn').classList.add('hidden');
+            timeInfo.classList.remove('winner-info-blink');
 
         } else if (remoteState.isRunning) {
             const remainingMs = remoteState.targetTimestamp - serverNow();
@@ -1193,7 +1194,6 @@
             const seconds = totalSeconds % 60;
             timeInfo.textContent = `Zostáva: ${minutes}:${String(seconds).padStart(2, '0')}`;
 
-            // === NOVÉ: blikanie pri ≤ 30 sekundách ===
             if (remainingMs <= 30000) {
                 timeInfo.classList.add('countdown-critical');
             } else {
@@ -1201,6 +1201,7 @@
             }
 
             document.getElementById('status').textContent = 'LIVE – spustené';
+            timeInfo.classList.remove('winner-info-blink');
 
         } else if (remoteState.stopped) {
             displayArea.classList.add('stopped', 'winner');
@@ -1234,6 +1235,9 @@
                 playWinnerReveal();
             }
 
+            // === BLÍKANIE BIELEHO TEXTU POČAS VÍŤAZA ===
+            timeInfo.classList.add('winner-info-blink');
+
             if (!attendanceRenderedForState) {
                 allNames = [...stateAllNames];
                 renderAttendanceList(stateAllNames, stateActiveNames);
@@ -1250,6 +1254,7 @@
             showControlPanel();
             bottomSection.style.display = 'block';
             document.getElementById('winnerResetBtn').classList.add('hidden');
+            timeInfo.classList.remove('winner-info-blink');
 
             if (!attendanceRenderedForState) {
                 renderAttendanceList(allNames, allNames);

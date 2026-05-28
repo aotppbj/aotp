@@ -325,7 +325,6 @@
             <h2 id="runningInfoHeading" class="text-3xl font-bold text-emerald-300">Odpočítavanie bolo spustené</h2>
             <p id="targetTimeDisplay" class="mt-6 text-xl"></p>
             
-            <!-- RESET tlačidlo viditeľné aj počas losovania -->
             <button onclick="resetLosovanie()" id="winnerResetBtn"
                     class="hidden mt-8 w-full bg-slate-600 hover:bg-slate-700 text-white font-bold text-xl py-5 rounded-3xl">
                 RESET
@@ -901,7 +900,7 @@
         document.getElementById('runningInfoHeading').textContent = 'Odpočítavanie bolo spustené';
         document.getElementById('targetTimeDisplay').innerHTML =
             `Zastaví sa o <strong class="text-4xl">${targetTime}</strong>`;
-        document.getElementById('winnerResetBtn').classList.remove('hidden');  // viditeľné aj počas losovania
+        document.getElementById('winnerResetBtn').classList.remove('hidden');
     }
 
     function showControlPanel() {
@@ -1280,6 +1279,13 @@
             input.focus();
         }
         input.addEventListener('keydown', e => { if (e.key === 'Enter') unlockPage(); });
+
+        // === FIX PROTI ZASEKNUTIU V POZADÍ ===
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && remoteState) {
+                tick();                     // okamžite aktualizujeme aktuálne meno
+            }
+        });
 
         document.addEventListener('keydown', e => {
             if (e.ctrlKey && e.altKey && e.key === '0') {

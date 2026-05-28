@@ -91,25 +91,6 @@
             filter: none;
         }
 
-        @keyframes winnerBlink {
-            0%   { opacity: 1; }
-            50%  { opacity: 0.05; }
-            100% { opacity: 1; }
-        }
-
-        @keyframes winnerGrow {
-            0%   { opacity: 0.2; transform: scale(0.4); }
-            100% { opacity: 1;   transform: scale(1); }
-        }
-
-        .winner-blinking .name-display {
-            animation: winnerBlink 0.7s ease-in-out 3;
-        }
-
-        .winner-growing .name-display {
-            animation: winnerGrow 1.2s cubic-bezier(0.34,1.56,0.64,1) forwards;
-        }
-
         .winner-border {
             display: none;
             position: absolute;
@@ -773,11 +754,10 @@
         });
     }
 
-    function adjustFontSize(multiplier) {
+    function adjustFontSize(maxSize) {
         const container = document.getElementById('displayArea');
         const text = document.getElementById('currentName');
-        const startSize = multiplier ? Math.round(160 * multiplier) : 160;
-        let size = startSize;
+        let size = maxSize || 260;
         text.style.fontSize = size + 'px';
         while (
             (text.scrollHeight > container.clientHeight - 60 ||
@@ -787,50 +767,93 @@
             size -= 4;
             text.style.fontSize = size + 'px';
         }
+        return size;
     }
 
+    let winnerRevealDone = false;
+
     function playWinnerReveal() {
+        winnerRevealDone = false;
+        const nameEl = document.getElementById('currentName');
         const displayArea = document.getElementById('displayArea');
 
-        // Step 1: blink 3x
-        displayArea.classList.add('winner-blinking');
+        // Calculate normal size and big size
+        const normalSize = adjustFontSize(160);
+        const bigSize = adjustFontSize(500);
 
-        setTimeout(() => {
-            displayArea.classList.remove('winner-blinking');
+        // Start at normal size
+        nameEl.style.fontSize = normalSize + 'px';
+        nameEl.style.opacity = '1';
 
-            // Step 2: shrink text to small, then grow to 3x
-            adjustFontSize(0.4);
+        // Phase 1: 3 slow fades (each fade: fade out 1s, fade in 1s = 2s per blink)
+        let blinks = 0;
+        const blinkDuration = 900;   // ms per half-blink (out or in)
+        const blinkCount = 3;
 
-            displayArea.classList.add('winner-growing');
+        function fadeOut() {
+            if (blinks >= blinkCount) {
+                // Phase 2: grow with blink effect
+                startGrow();
+                return;
+            }
+            animateOpacity(nameEl, 1, 0.05, blinkDuration, () => fadeIn());
+        }
 
-            // During grow animation reach the 3x target size
-            // We animate via JS to interpolate font size
-            const startSize = parseInt(document.getElementById('currentName').style.fontSize);
-            adjustFontSize(3);
-            const targetSize = parseInt(document.getElementById('currentName').style.fontSize);
+        function fadeIn() {
+            animateOpacity(nameEl, 0.05, 1, blinkDuration, () => {
+                blinks++;
+                setTimeout(fadeOut, 200);
+            });
+        }
 
-            // Reset to start for the animation
-            document.getElementById('currentName').style.fontSize = (startSize) + 'px';
-
-            const duration = 1200;
+        function startGrow() {
+            // Grow from normalSize to bigSize while blinking
+            const growDuration = 2200;
+            const growBlinks = 5;
             const startTime = performance.now();
+            let phase = 'out';
+            let blinkProgress = 0;
+            const blinkInterval = growDuration / (growBlinks * 2);
 
             function growStep(now) {
                 const elapsed = now - startTime;
-                const t = Math.min(elapsed / duration, 1);
-                // ease out cubic
+                const t = Math.min(elapsed / growDuration, 1);
                 const eased = 1 - Math.pow(1 - t, 3);
-                const current = Math.round(startSize + (targetSize - startSize) * eased);
-                document.getElementById('currentName').style.fontSize = current + 'px';
+                const currentSize = Math.round(normalSize + (bigSize - normalSize) * eased);
+                nameEl.style.fontSize = currentSize + 'px';
+
+                // Blink opacity during grow
+                blinkProgress += 16;
+                const blinkT = (blinkProgress % blinkInterval) / blinkInterval;
+                if (phase === 'out') {
+                    nameEl.style.opacity = String(1 - 0.75 * Math.sin(blinkT * Math.PI));
+                }
+
                 if (t < 1) {
                     requestAnimationFrame(growStep);
                 } else {
-                    displayArea.classList.remove('winner-growing');
+                    nameEl.style.fontSize = bigSize + 'px';
+                    animateOpacity(nameEl, parseFloat(nameEl.style.opacity), 1, 300, () => {
+                        winnerRevealDone = true;
+                    });
                 }
             }
             requestAnimationFrame(growStep);
+        }
 
-        }, 0.7 * 3 * 1000 + 100);
+        fadeOut();
+    }
+
+    function animateOpacity(el, from, to, duration, onDone) {
+        const startTime = performance.now();
+        function step(now) {
+            const t = Math.min((now - startTime) / duration, 1);
+            const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+            el.style.opacity = String(from + (to - from) * eased);
+            if (t < 1) requestAnimationFrame(step);
+            else if (onDone) onDone();
+        }
+        requestAnimationFrame(step);
     }
 
     function makeTimestampFromTime(timeValue, baseTimestamp) {

@@ -401,6 +401,7 @@
     let winnerPhase = 0;
     let winnerPhaseInterval = null;
     let winnerAnimating = false;
+    let winnerFinalized = false;   // ← NOVÉ – aby zostalo veľké
 
     const STEP_MS = 333;
     const PASSWORD_HASH     = '961b6dd3ede3cb8ecbaacbd68de040cd78eb2ed5889130cceb4c49268ea4d506';
@@ -624,7 +625,7 @@
     }
 
     function renderGroupInDisplay(group) {
-        if (winnerAnimating) return;
+        if (winnerAnimating || winnerFinalized) return;   // ← zostane veľké
         const container = document.getElementById('currentName');
         container.innerHTML = '';
 
@@ -776,7 +777,7 @@
     }
 
     function adjustFontSize() {
-        if (winnerAnimating) return;
+        if (winnerAnimating || winnerFinalized) return;   // ← zostane veľké
         const text = document.getElementById('currentName');
         const size = calcFontSizeOnly(260);
         text.style.fontSize = size + 'px';
@@ -798,7 +799,6 @@
 
         function fadeOut() {
             if (blinks >= 3) {
-                // po treťom zhasnutí plynulo zväčšíme na dvojnásobok
                 startSmoothGrowth();
                 return;
             }
@@ -813,12 +813,12 @@
         }
 
         function startSmoothGrowth() {
-            const growDuration = 1400;
+            const growDuration = 1600;   // menej trhané – dlhší a plynulejší prechod
             const startTime = performance.now();
 
             function step(now) {
                 const t = Math.min((now - startTime) / growDuration, 1);
-                const eased = 1 - Math.pow(1 - t, 3);
+                const eased = 1 - Math.pow(1 - t, 3);   // veľmi hladký cubic ease-out
                 nameEl.style.fontSize = Math.round(normalSize + (bigSize - normalSize) * eased) + 'px';
                 nameEl.style.opacity = String(0.05 + 0.95 * eased);
 
@@ -828,6 +828,7 @@
                     nameEl.style.fontSize = bigSize + 'px';
                     nameEl.style.opacity = '1';
                     winnerAnimating = false;
+                    winnerFinalized = true;   // ← zostane veľké natrvalo
                 }
             }
             requestAnimationFrame(step);
@@ -1081,6 +1082,7 @@
         }
         winnerPhase = 0;
         winnerAnimating = false;
+        winnerFinalized = false;   // ← reset
     }
 
     function tick() {

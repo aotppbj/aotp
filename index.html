@@ -84,6 +84,14 @@
             animation: nameFlashRed 0.45s ease-out;
         }
 
+        /* NOVÉ – trvalé zelené svietenie víťazných mien v spodnom zozname */
+        .name-chip.winner-name {
+            background: #10b981 !important;
+            color: white !important;
+            box-shadow: 0 0 25px #10b981;
+            animation: nameFlashRed 1.8s infinite alternate ease-in-out;
+        }
+
         .winner .name-display {
             animation: none;
             color: #00ff00;
@@ -1071,6 +1079,11 @@
         renderAttendanceList(allNames, allNames);
         renderNamesList(allNames, allNames);
         document.getElementById('winnerResetBtn').classList.add('hidden');
+
+        // odstrániť trvalé zelené svietenie
+        document.querySelectorAll('#namesList .name-chip.winner-name').forEach(el => {
+            el.classList.remove('winner-name');
+        });
     }
 
     function updateWinnerTimeInfo(fg) {
@@ -1093,6 +1106,18 @@
         winnerPhase = 0;
         winnerAnimating = false;
         winnerFinalized = false;
+    }
+
+    function highlightPermanentWinner(fg) {
+        // odstrániť staré zvýraznenie
+        document.querySelectorAll('#namesList .name-chip.winner-name').forEach(el => el.classList.remove('winner-name'));
+
+        if (!fg || !fg.length) return;
+
+        fg.forEach(name => {
+            const chip = document.querySelector(`#namesList .name-chip[data-name="${name}"]`);
+            if (chip) chip.classList.add('winner-name');
+        });
     }
 
     function tick() {
@@ -1175,11 +1200,13 @@
 
             document.getElementById('winnerResetBtn').classList.remove('hidden');
 
-            // === ZMENENÉ: OKNO DOLE ZOSTANE VIDITEĽNÉ AJ PO ZLOSOVANÍ ===
-            bottomSection.style.display = 'block';
+            bottomSection.style.display = 'block';   // zostane viditeľné
 
             const fg = remoteState.finalGroup || ['Výber ukončený'];
             setDisplayGroup(fg);
+
+            // trvalé zelené svietenie víťazných mien dole
+            highlightPermanentWinner(fg);
 
             document.getElementById('status').textContent = `ZASTAVENÉ na: ${fg.join(' & ')}`;
 

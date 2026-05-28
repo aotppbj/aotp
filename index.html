@@ -789,7 +789,7 @@
         nameEl.style.transition = 'none';
 
         const normalSize = calcFontSizeOnly(260);
-        const bigSize = calcFontSizeOnly(780);
+        const bigSize = Math.round(normalSize * 2);
 
         nameEl.style.fontSize = normalSize + 'px';
         nameEl.style.opacity = '1';
@@ -798,6 +798,7 @@
 
         function fadeOut() {
             if (blinks >= 3) {
+                // po treťom zhasnutí plynulo zväčšíme na dvojnásobok
                 startSmoothGrowth();
                 return;
             }

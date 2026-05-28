@@ -91,6 +91,25 @@
             filter: none;
         }
 
+        @keyframes winnerBlink {
+            0%   { opacity: 1; }
+            50%  { opacity: 0.05; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes winnerGrow {
+            0%   { opacity: 0.2; transform: scale(0.4); }
+            100% { opacity: 1;   transform: scale(1); }
+        }
+
+        .winner-blinking .name-display {
+            animation: winnerBlink 0.7s ease-in-out 3;
+        }
+
+        .winner-growing .name-display {
+            animation: winnerGrow 1.2s cubic-bezier(0.34,1.56,0.64,1) forwards;
+        }
+
         .winner-border {
             display: none;
             position: absolute;
@@ -754,10 +773,11 @@
         });
     }
 
-    function adjustFontSize() {
+    function adjustFontSize(multiplier) {
         const container = document.getElementById('displayArea');
         const text = document.getElementById('currentName');
-        let size = 160;
+        const startSize = multiplier ? Math.round(160 * multiplier) : 160;
+        let size = startSize;
         text.style.fontSize = size + 'px';
         while (
             (text.scrollHeight > container.clientHeight - 60 ||
@@ -767,6 +787,50 @@
             size -= 4;
             text.style.fontSize = size + 'px';
         }
+    }
+
+    function playWinnerReveal() {
+        const displayArea = document.getElementById('displayArea');
+
+        // Step 1: blink 3x
+        displayArea.classList.add('winner-blinking');
+
+        setTimeout(() => {
+            displayArea.classList.remove('winner-blinking');
+
+            // Step 2: shrink text to small, then grow to 3x
+            adjustFontSize(0.4);
+
+            displayArea.classList.add('winner-growing');
+
+            // During grow animation reach the 3x target size
+            // We animate via JS to interpolate font size
+            const startSize = parseInt(document.getElementById('currentName').style.fontSize);
+            adjustFontSize(3);
+            const targetSize = parseInt(document.getElementById('currentName').style.fontSize);
+
+            // Reset to start for the animation
+            document.getElementById('currentName').style.fontSize = (startSize) + 'px';
+
+            const duration = 1200;
+            const startTime = performance.now();
+
+            function growStep(now) {
+                const elapsed = now - startTime;
+                const t = Math.min(elapsed / duration, 1);
+                // ease out cubic
+                const eased = 1 - Math.pow(1 - t, 3);
+                const current = Math.round(startSize + (targetSize - startSize) * eased);
+                document.getElementById('currentName').style.fontSize = current + 'px';
+                if (t < 1) {
+                    requestAnimationFrame(growStep);
+                } else {
+                    displayArea.classList.remove('winner-growing');
+                }
+            }
+            requestAnimationFrame(growStep);
+
+        }, 0.7 * 3 * 1000 + 100);
     }
 
     function makeTimestampFromTime(timeValue, baseTimestamp) {
@@ -1083,6 +1147,7 @@
                     winnerPhase = 1 - winnerPhase;
                     updateWinnerTimeInfo(fg);
                 }, 5000);
+                playWinnerReveal();
             }
 
             showControlPanel();

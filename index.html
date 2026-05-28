@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AOTPP</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231e1b4b'/><circle cx='50' cy='50' r='44' fill='none' stroke='%2310b981' stroke-width='5'/><text x='50' y='53' text-anchor='middle' dominant-baseline='middle' font-family='Inter,sans-serif' font-weight='700' font-size='68' fill='%2310b981'>A<%2Ftext><%2Fsvg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231e1b4b'/><circle cx='50' cy='50' r='44' fill='none' stroke='%2310b981' stroke-width='5'/><text x='50' y='53' text-anchor='middle' dominant-baseline='middle' font-family='Inter,sans-serif' font-weight='700' font-size='68' fill='%2310b981'>A</text></svg>">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -13,9 +13,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-        }
+        body { font-family: 'Inter', system-ui, sans-serif; }
 
         .name-display {
             font-size: 4.5rem;
@@ -36,64 +34,25 @@
             gap: 8px;
         }
 
-        .name-single {
-            display: block;
-            text-align: center;
-        }
+        .name-single { display: block; text-align: center; }
+        .name-group-item { display: block; text-align: center; }
+        .name-group-separator { font-size: 0.4em; opacity: 0.55; line-height: 1; letter-spacing: 0.15em; text-transform: uppercase; }
 
-        .name-group-item {
-            display: block;
-            text-align: center;
-        }
+        @keyframes pulse { from { transform: scale(0.97); } to { transform: scale(1.03); } }
+        .running .name-display { animation: pulse 0.8s infinite alternate ease-in-out; }
+        .stopped .name-display { animation: none; }
 
-        .name-group-separator {
-            display: block;
-            font-size: 0.4em;
-            opacity: 0.55;
-            line-height: 1;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-        }
+        @keyframes countdownCritical { 0%,100% { color:#fff; } 50% { color:#ef4444; } }
+        .countdown-critical { animation: countdownCritical 1.4s infinite ease-in-out; font-weight:700; }
 
-        @keyframes pulse {
-            from { transform: scale(0.97); }
-            to   { transform: scale(1.03); }
-        }
-
-        .running .name-display {
-            animation: pulse 0.8s infinite alternate ease-in-out;
-        }
-
-        .stopped .name-display {
-            animation: none;
-        }
-
-        /* BLÍKANIE ČASU POSLEDNÝCH 30 SEKÚND (červeno-bielo) */
-        @keyframes countdownCritical {
-            0%, 100% { color: #ffffff; }
-            50%      { color: #ef4444; }
-        }
-
-        .countdown-critical {
-            animation: countdownCritical 1.4s infinite ease-in-out;
-            font-weight: 700;
-        }
-
-        #displayArea {
-            height: 360px;
-            position: relative;
-            overflow: hidden;
-        }
+        #displayArea { height:360px; position:relative; overflow:hidden; }
 
         @keyframes nameFlashRed {
             0%   { background-color: rgba(110,231,183,0.35); color: #6ee7b7; transform: scale(1.08); box-shadow: 0 0 22px rgba(110,231,183,0.6); }
             50%  { background-color: rgba(110,231,183,0.18); color: #6ee7b7; transform: scale(1.04); box-shadow: 0 0 14px rgba(110,231,183,0.35); }
             100% { background-color: rgba(255,255,255,0.10); color: white; transform: scale(1); box-shadow: none; }
         }
-
-        .name-flash {
-            animation: nameFlashRed 0.45s ease-out;
-        }
+        .name-flash { animation: nameFlashRed 0.45s ease-out; }
 
         .name-chip.winner-name {
             background: #10b981 !important;
@@ -102,12 +61,7 @@
             animation: nameFlashRed 1.8s infinite alternate ease-in-out;
         }
 
-        .winner .name-display {
-            animation: none;
-            color: #00ff00;
-            text-shadow: none;
-            filter: none;
-        }
+        .winner .name-display { animation:none; color:#00ff00; text-shadow:none; filter:none; }
 
         .winner-border {
             display: none;
@@ -120,94 +74,39 @@
             overflow: visible;
             box-shadow: inset 0 0 22px rgba(255,255,255,0.10), 0 0 28px rgba(239,68,68,0.25);
         }
-
         .winner .winner-border { display: block; }
 
         .winner-ball {
             position: absolute;
-            width: 18px;
-            height: 18px;
+            width: 18px; height: 18px;
             border-radius: 9999px;
             z-index: 4;
         }
-
-        .winner-ball.white { background: #ffffff; box-shadow: none; }
+        .winner-ball.white { background: #ffffff; }
 
         @keyframes runWinnerBorderClockwise {
-            0%   { left: 0;    top: 0;    transform: translate(-50%,-50%); }
-            25%  { left: 100%; top: 0;    transform: translate(-50%,-50%); }
-            50%  { left: 100%; top: 100%; transform: translate(-50%,-50%); }
-            75%  { left: 0;    top: 100%; transform: translate(-50%,-50%); }
-            100% { left: 0;    top: 0;    transform: translate(-50%,-50%); }
+            0% { left:0; top:0; transform:translate(-50%,-50%); }
+            25% { left:100%; top:0; transform:translate(-50%,-50%); }
+            50% { left:100%; top:100%; transform:translate(-50%,-50%); }
+            75% { left:0; top:100%; transform:translate(-50%,-50%); }
+            100% { left:0; top:0; transform:translate(-50%,-50%); }
         }
-
-        .winner-ball.ball-1 {
-            animation: runWinnerBorderClockwise 3.2s linear infinite;
-            animation-delay: 0s;
-        }
+        .winner-ball.ball-1 { animation: runWinnerBorderClockwise 3.2s linear infinite; }
 
         .attendance-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 7px 10px;
-            border-radius: 14px;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
+            display:flex; align-items:center; gap:10px; padding:7px 10px;
+            border-radius:14px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
         }
-
-        .attendance-row input {
-            width: 18px;
-            height: 18px;
-            accent-color: #10b981;
-            cursor: pointer;
-            flex: 0 0 auto;
-        }
-
-        .attendance-name { font-size: 0.95rem; color: white; font-weight: 600; }
-
-        .attendance-row.absent { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.45); }
-        .attendance-row.absent .attendance-name { color: #f87171; text-decoration: line-through; text-decoration-thickness: 2px; }
+        .attendance-row input { width:18px; height:18px; accent-color:#10b981; cursor:pointer; }
+        .attendance-name { font-size:0.95rem; color:white; font-weight:600; }
+        .attendance-row.absent { background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.45); }
+        .attendance-row.absent .attendance-name { color:#f87171; text-decoration:line-through; text-decoration-thickness:2px; }
 
         .name-chip.absent {
-            color: #f87171;
-            text-decoration: line-through;
-            text-decoration-thickness: 2px;
-            background: rgba(239,68,68,0.12);
-            border: 1px solid rgba(239,68,68,0.35);
+            color:#f87171; text-decoration:line-through; text-decoration-thickness:2px;
+            background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35);
         }
-
-        .name-chip.flashing { animation: nameFlashRed 0.45s ease-out; }
-
-        .attendance-note { font-size: 0.75rem; color: #c7d2fe; margin-bottom: 12px; line-height: 1.35; }
-        .auto-note { font-size: 0.75rem; color: #c7d2fe; margin-top: 8px; line-height: 1.35; }
-
-        .selection-btn {
-            flex: 1;
-            padding: 10px 6px;
-            border-radius: 16px;
-            font-weight: 700;
-            font-size: 0.78rem;
-            text-align: center;
-            cursor: pointer;
-            border: 2px solid rgba(255,255,255,0.18);
-            background: rgba(255,255,255,0.07);
-            color: rgba(255,255,255,0.65);
-            transition: all 0.18s;
-            line-height: 1.25;
-        }
-
-        .selection-btn:hover {
-            background: rgba(255,255,255,0.13);
-            color: white;
-        }
-
-        .selection-btn.active {
-            background: rgba(99,102,241,0.55);
-            border-color: #818cf8;
-            color: white;
-            box-shadow: 0 0 14px rgba(99,102,241,0.45);
-        }
+        .name-chip.flashing { animation:nameFlashRed 0.45s ease-out; }
     </style>
 </head>
 
@@ -217,30 +116,34 @@
     <div class="w-full max-w-md bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 text-center">
         <h2 class="text-3xl font-bold text-emerald-300 mb-4">Prístup na stránku</h2>
         <p class="text-indigo-200 text-sm mb-6">Zadajte heslo pre vstup do losovača.</p>
-        <input type="password" id="pagePasswordInput"
-               class="w-full bg-white/10 border border-white/30 rounded-2xl px-5 py-4 text-xl text-center text-white outline-none"
-               placeholder="Heslo">
-        <button onclick="unlockPage()"
-                class="mt-6 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xl py-4 rounded-3xl">
-            VSTÚPIŤ
-        </button>
+        <input type="password" id="pagePasswordInput" class="w-full bg-white/10 border border-white/30 rounded-2xl px-5 py-4 text-xl text-center text-white outline-none" placeholder="Heslo">
+        <button onclick="unlockPage()" class="mt-6 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xl py-4 rounded-3xl">VSTÚPIŤ</button>
         <p id="loginError" class="hidden mt-4 text-red-400 font-semibold">Nesprávne heslo.</p>
     </div>
 </div>
 
 <div class="max-w-6xl w-full bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
 
+    <!-- HLAVIČKA s weather widgetom (viditeľný vždy) -->
     <div class="px-8 py-6 border-b border-white/20 flex justify-between items-center">
         <div class="flex items-center gap-3">
             <h1 class="text-4xl font-bold text-emerald-300">AOTPP výber</h1>
-            <div class="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 border border-white/20 rounded-2xl text-sm font-semibold text-white/80">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                </svg>
-                <span id="onlineCount2">0</span>
+            
+            <!-- Weather widget -->
+            <div id="weatherWidget" class="flex items-center gap-3 bg-white/10 border border-white/20 rounded-3xl px-5 py-2 text-white text-lg font-medium">
+                <span id="weatherIcon" class="text-3xl">⛅</span>
+                <span id="weatherTemp" class="font-semibold">—°C</span>
+                <span id="weatherCity" class="text-emerald-300">Bardejov</span>
+                <span class="text-white/60 mx-1">•</span>
+                <span id="liveTime" class="font-mono tabular-nums">—:--</span>
             </div>
         </div>
+
         <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 border border-white/20 rounded-2xl text-sm font-semibold text-white/80">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span id="onlineCount2">0</span>
+            </div>
             <div id="onlineCounter" class="px-4 py-2 bg-emerald-500/20 border border-emerald-400/30 rounded-2xl text-sm font-medium text-emerald-300 flex items-center gap-2">
                 <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 online
@@ -252,7 +155,6 @@
     <div class="flex flex-col lg:flex-row">
 
         <div id="controlPanel" class="lg:w-96 p-8 border-r border-white/20">
-
             <div class="flex flex-col gap-2 mb-5">
                 <div class="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-white/8 border border-white/12">
                     <span class="text-xs text-indigo-200 uppercase tracking-wide leading-tight">Počet všetkých zamestnancov<br>AOTPP BJ</span>
@@ -269,102 +171,60 @@
             </div>
 
             <div class="flex gap-2 mb-5">
-                <button class="selection-btn active" id="btn-select-1" onclick="setGroupSize(1)">
-                    Výber<br>1 osoby
-                </button>
-                <button class="selection-btn" id="btn-select-2" onclick="setGroupSize(2)">
-                    Výber<br>2 osôb
-                </button>
-                <button class="selection-btn" id="btn-select-3" onclick="setGroupSize(3)">
-                    Výber<br>3 osôb
-                </button>
+                <button class="selection-btn active" id="btn-select-1" onclick="setGroupSize(1)">Výber<br>1 osoby</button>
+                <button class="selection-btn" id="btn-select-2" onclick="setGroupSize(2)">Výber<br>2 osôb</button>
+                <button class="selection-btn" id="btn-select-3" onclick="setGroupSize(3)">Výber<br>3 osôb</button>
             </div>
 
             <p class="text-xs uppercase tracking-widest text-indigo-200 mb-2">Menný zoznam</p>
-            <p class="attendance-note">
-                (Zaškrtnuté mená sú zaradené do výberu. Odškrtnuté mená nie sú zahrnuté do výberu.)
-            </p>
-
+            <p class="attendance-note">(Zaškrtnuté mená sú zaradené do výberu. Odškrtnuté mená nie sú zahrnuté do výberu.)</p>
             <div id="attendanceList" class="space-y-2 max-h-72 overflow-y-auto pr-2"></div>
 
             <div class="mt-6">
                 <label class="block text-sm mb-2">Automaticky spustiť o:</label>
-                <input type="time" id="autoStartTime"
-                       class="w-full bg-white/10 border border-white/30 rounded-2xl px-6 py-4 text-3xl text-center">
-                <p class="auto-note">
-                    Ak vyplníte čas a stlačíte „Naplánovať", losovanie sa spustí automaticky. Stránka musí byť vtedy otvorená.
-                </p>
+                <input type="time" id="autoStartTime" class="w-full bg-white/10 border border-white/30 rounded-2xl px-6 py-4 text-3xl text-center">
+                <p class="auto-note">Ak vyplníte čas a stlačíte „Naplánovať", losovanie sa spustí automaticky. Stránka musí byť vtedy otvorená.</p>
                 <div class="flex gap-3 mt-3">
-                    <button onclick="scheduleAutoStart()"
-                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base py-4 rounded-3xl">
-                        NAPLÁNOVAŤ
-                    </button>
-                    <button onclick="cancelAutoStart()"
-                            class="flex-1 bg-slate-600 hover:bg-slate-700 text-white font-bold text-base py-4 rounded-3xl">
-                        ZRUŠIŤ PLÁN
-                    </button>
+                    <button onclick="scheduleAutoStart()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base py-4 rounded-3xl">NAPLÁNOVAŤ</button>
+                    <button onclick="cancelAutoStart()" class="flex-1 bg-slate-600 hover:bg-slate-700 text-white font-bold text-base py-4 rounded-3xl">ZRUŠIŤ PLÁN</button>
                 </div>
             </div>
 
             <div class="mt-6">
                 <label class="block text-sm mb-2">Zastaviť o:</label>
-                <input type="time" id="targetTime" value="10:00"
-                       class="w-full bg-white/10 border border-white/30 rounded-2xl px-6 py-4 text-3xl text-center">
+                <input type="time" id="targetTime" value="10:00" class="w-full bg-white/10 border border-white/30 rounded-2xl px-6 py-4 text-3xl text-center">
             </div>
 
             <div class="flex gap-3 mt-8">
-                <button onclick="startLosovanie()" id="startBtn"
-                        class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xl py-6 rounded-3xl">
-                    ŠTART
-                </button>
-                <button onclick="manualStop()"
-                        class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xl py-6 rounded-3xl">
-                    STOP
-                </button>
+                <button onclick="startLosovanie()" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xl py-6 rounded-3xl">ŠTART</button>
+                <button onclick="manualStop()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xl py-6 rounded-3xl">STOP</button>
             </div>
-
             <div class="mt-4">
-                <button onclick="resetLosovanie()"
-                        class="w-full bg-slate-600 hover:bg-slate-700 text-white font-bold text-xl py-5 rounded-3xl">
-                    RESET
-                </button>
+                <button onclick="resetLosovanie()" class="w-full bg-slate-600 hover:bg-slate-700 text-white font-bold text-xl py-5 rounded-3xl">RESET</button>
             </div>
-
         </div>
 
         <div id="runningInfo" class="hidden lg:w-96 p-8 border-r border-white/20 flex flex-col justify-center items-center text-center">
             <h2 id="runningInfoHeading" class="text-3xl font-bold text-emerald-300">Odpočítavanie bolo spustené</h2>
             <p id="targetTimeDisplay" class="mt-6 text-xl"></p>
-            
-            <button onclick="resetLosovanie()" id="winnerResetBtn"
-                    class="hidden mt-8 w-full bg-slate-600 hover:bg-slate-700 text-white font-bold text-xl py-5 rounded-3xl">
-                RESET
-            </button>
+            <button onclick="resetLosovanie()" id="winnerResetBtn" class="hidden mt-8 w-full bg-slate-600 hover:bg-slate-700 text-white font-bold text-xl py-5 rounded-3xl">RESET</button>
         </div>
 
         <div class="flex-1 flex flex-col">
-            <div id="displayArea"
-                 class="stopped bg-gradient-to-br from-purple-800/80 to-indigo-800/80 mx-8 mt-8 mb-4 rounded-3xl flex items-center justify-center">
-
-                <div class="winner-border">
-                    <span class="winner-ball white ball-1"></span>
-                </div>
-
+            <div id="displayArea" class="stopped bg-gradient-to-br from-purple-800/80 to-indigo-800/80 mx-8 mt-8 mb-4 rounded-3xl flex items-center justify-center">
+                <div class="winner-border"><span class="winner-ball white ball-1"></span></div>
                 <div id="currentName" class="name-display text-white">
                     <span class="name-single">Čakám na štart...</span>
                 </div>
             </div>
-
             <div id="timeInfo" class="mx-8 mb-8 text-center text-lg font-medium"></div>
         </div>
-
     </div>
 
     <div id="bottomNamesSection" class="px-8 pb-8">
         <p class="text-xs uppercase tracking-widest text-indigo-200 mb-3">Zamestnanci AOTPP BJ</p>
         <div id="namesList" class="flex flex-wrap gap-2"></div>
     </div>
-
 </div>
 
 <script>
@@ -379,37 +239,11 @@
     };
 
     const DEFAULT_NAMES = [
-        'Monika B.',
-        'Eva B.',
-        'Jana B.',
-        'Ján D.',
-        'Eva F.',
-        'Adriána F.',
-        'Lukáš G.',
-        'Daniela H.',
-        'Miroslav H.',
-        'Lenka H.',
-        'Slavomíra J.',
-        'Gabriela K.',
-        'Rastislav K.',
-        'Radka K.',
-        'Alena K.',
-        'Svetlana K.',
-        'Gabriel L.',
-        'Silvia M.',
-        'Zuzana M.',
-        'Marcela N.',
-        'Klaudia O.',
-        'Igor P.',
-        'Martin P.',
-        'Vladislav P.',
-        'Mária S.',
-        'Monika S.',
-        'Silvia S.',
-        'Eva S.',
-        'Gabriela Š.',
-        'Lenka Š.',
-        'Lenka V.',
+        'Monika B.','Eva B.','Jana B.','Ján D.','Eva F.','Adriána F.','Lukáš G.','Daniela H.',
+        'Miroslav H.','Lenka H.','Slavomíra J.','Gabriela K.','Rastislav K.','Radka K.',
+        'Alena K.','Svetlana K.','Gabriel L.','Silvia M.','Zuzana M.','Marcela N.',
+        'Klaudia O.','Igor P.','Martin P.','Vladislav P.','Mária S.','Monika S.',
+        'Silvia S.','Eva S.','Gabriela Š.','Lenka Š.','Lenka V.'
     ];
 
     let app, db;
@@ -427,43 +261,33 @@
     let winnerFinalized = false;
 
     const STEP_MS = 333;
-    const PASSWORD_HASH     = '961b6dd3ede3cb8ecbaacbd68de040cd78eb2ed5889130cceb4c49268ea4d506';
+    const PASSWORD_HASH = '961b6dd3ede3cb8ecbaacbd68de040cd78eb2ed5889130cceb4c49268ea4d506';
     const PAGE_PASSWORD_HASH = 'b3f0523331975dc864413e5f186a70b9c54bebe0811de8a5f02cb8ed8fd6868a';
 
     async function sha256(text) {
-        const buf = await crypto.subtle.digest(
-            'SHA-256',
-            new TextEncoder().encode(text)
-        );
-        return Array.from(new Uint8Array(buf))
-            .map(b => b.toString(16).padStart(2, '0'))
-            .join('');
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
     function setGroupSize(n) {
         selectedGroupSize = n;
-        [1, 2, 3].forEach(i => {
-            document.getElementById('btn-select-' + i).classList.toggle('active', i === n);
-        });
+        [1,2,3].forEach(i => document.getElementById('btn-select-' + i).classList.toggle('active', i === n));
     }
 
     function updateCounters() {
         const checkboxes = document.querySelectorAll('#attendanceList input[type="checkbox"]');
-        const total    = checkboxes.length;
-        const active   = Array.from(checkboxes).filter(c => c.checked).length;
-        const inactive = total - active;
-        document.getElementById('countTotal').textContent    = total;
-        document.getElementById('countActive').textContent   = active;
-        document.getElementById('countInactive').textContent = inactive;
+        const total = checkboxes.length;
+        const active = Array.from(checkboxes).filter(c => c.checked).length;
+        document.getElementById('countTotal').textContent = total;
+        document.getElementById('countActive').textContent = active;
+        document.getElementById('countInactive').textContent = total - active;
     }
 
     function initFirebase() {
         app = firebase.initializeApp(firebaseConfig);
         db = firebase.database();
 
-        db.ref('.info/serverTimeOffset').on('value', snap => {
-            serverTimeOffset = snap.val() || 0;
-        });
+        db.ref('.info/serverTimeOffset').on('value', snap => { serverTimeOffset = snap.val() || 0; });
 
         db.ref('losovac').on('value', snap => {
             remoteState = snap.val();
@@ -474,7 +298,6 @@
             if (!remoteState || !remoteState.isRunning) {
                 document.getElementById('status').textContent = snap.val() ? 'Pripojené' : 'Odpojené';
             }
-
             if (snap.val()) {
                 const presenceRef = db.ref('presence').push();
                 presenceRef.onDisconnect().remove();
@@ -483,54 +306,51 @@
         });
 
         db.ref('presence').on('value', snap => {
-            const count = snap.numChildren();
-            document.getElementById('onlineCount2').textContent = count;
+            document.getElementById('onlineCount2').textContent = snap.numChildren();
         });
     }
 
-    function setupTimeInputStability() {
-        ['autoStartTime', 'targetTime'].forEach(id => {
-            const input = document.getElementById(id);
-            if (!input) return;
-            ['focus','pointerdown','mousedown','touchstart'].forEach(ev =>
-                input.addEventListener(ev, () => { timeInputActive = true; })
-            );
-            ['blur','change'].forEach(ev =>
-                input.addEventListener(ev, () => { setTimeout(() => { timeInputActive = false; }, 400); })
-            );
-        });
-    }
+    // === OPEN-METEO (bez API kľúča) pre Bardejov ===
+    async function loadWeather() {
+        try {
+            const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=49.292&longitude=21.276&current_weather=true&timezone=Europe/Bratislava');
+            const data = await res.json();
+            const current = data.current_weather;
 
-    async function unlockPage() {
-        const input = document.getElementById('pagePasswordInput');
-        const error = document.getElementById('loginError');
-        const hash = await sha256(input.value);
-        if (hash === PAGE_PASSWORD_HASH) {
-            sessionStorage.setItem('losovacPageUnlocked', 'true');
-            document.getElementById('loginOverlay').style.display = 'none';
-            return;
+            let icon = '⛅';
+            const code = current.weathercode;
+            if ([0,1].includes(code)) icon = '☀️';
+            else if ([2,3].includes(code)) icon = '⛅';
+            else if ([45,48].includes(code)) icon = '🌫️';
+            else if ([51,53,55,61,63,65,80,81,82].includes(code)) icon = '🌧️';
+            else if ([71,73,75,77,85,86].includes(code)) icon = '❄️';
+            else if ([95,96,99].includes(code)) icon = '⛈️';
+
+            document.getElementById('weatherIcon').textContent = icon;
+            document.getElementById('weatherTemp').textContent = `${Math.round(current.temperature)}°C`;
+        } catch(e) {
+            document.getElementById('weatherIcon').textContent = '⛅';
+            document.getElementById('weatherTemp').textContent = '—°C';
         }
-        error.classList.remove('hidden');
-        input.value = '';
-        input.focus();
     }
 
-    function serverNow() { return Date.now() + serverTimeOffset; }
-
-    async function checkPassword(actionText) {
-        const password = prompt('Zadajte heslo na ' + actionText + ':');
-        if (password === null) return false;
-        const hash = await sha256(password);
-        if (hash === PASSWORD_HASH) return true;
-        alert('Nesprávne heslo.');
-        return false;
+    function updateLiveTime() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('liveTime').textContent = `${hours}:${minutes}`;
     }
 
     function createRandomSeed() {
-        const array = new Uint32Array(4);
+        const array = new Uint8Array(64);
         crypto.getRandomValues(array);
-        return Array.from(array).join('-') + '-' + Date.now() + '-' + Math.random();
+        let seed = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+        seed += '-' + Date.now();
+        seed += '-' + Math.random().toString(36).substring(2, 15);
+        return seed;
     }
+
+    // (zvyšok kódu je rovnaký ako v predchádzajúcej verzii – všetky funkcie hashString, seededRandom, getCycleNames, tick, atď.)
 
     function hashString(text) {
         let hash = 2166136261;
@@ -561,36 +381,23 @@
     }
 
     function arraysEqual(a, b) {
-        if (!Array.isArray(a) || !Array.isArray(b)) return false;
-        if (a.length !== b.length) return false;
-        for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
-        return true;
+        if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+        return a.every((v, i) => v === b[i]);
     }
 
     function getCycleNames(state, cycleNumber) {
         const names = state.names || state.activeNames || [];
         if (!names.length) return [];
-
         let attempt = 0;
         let result = [];
-
         do {
-            const seed =
-                (state.randomBaseSeed || 'fallback-seed') +
-                '|repeat|' + cycleNumber +
-                '|attempt|' + attempt +
-                '|names|' + names.join('|');
-
+            const seed = (state.randomBaseSeed || 'fallback-seed') + '|repeat|' + cycleNumber + '|attempt|' + attempt + '|names|' + names.join('|');
             result = shuffleBySeed(names, seed);
-
             if (cycleNumber === 0) return result;
-
             const previous = getCycleNames(state, cycleNumber - 1);
             if (!arraysEqual(result, previous)) return result;
-
             attempt++;
         } while (attempt < 20);
-
         return result;
     }
 
@@ -598,16 +405,13 @@
         const shuffled = getCycleNames(state, cycleNumber);
         const gs = state.groupSize || 1;
         if (gs === 1) return shuffled.map(n => [n]);
-
         const n = shuffled.length;
         const remainder = n % gs;
         const groups = [];
-
         const fullCount = remainder === 0 ? n : n - remainder;
         for (let i = 0; i < fullCount; i += gs) {
             groups.push(shuffled.slice(i, i + gs));
         }
-
         if (remainder !== 0) {
             const lastGroup = shuffled.slice(fullCount);
             const nextShuffled = getCycleNames(state, cycleNumber + 1);
@@ -615,32 +419,20 @@
             const extra = nextShuffled.slice(0, needed);
             groups.push([...lastGroup, ...extra]);
         }
-
         return groups;
     }
 
     function getPositionAtTimestamp(state, timestamp) {
         const names = state.names || state.activeNames || [];
-        if (!state || names.length === 0) {
-            return { absoluteStep: 0, cycleNumber: 0, indexInCycle: 0, group: [] };
-        }
-
+        if (!state || names.length === 0) return { group: [] };
         const gs = state.groupSize || 1;
         const stepMs = state.stepMs || STEP_MS;
         const elapsed = Math.max(0, Math.floor((timestamp - state.startTimestamp) / stepMs));
-
         const groupsPerCycle = Math.ceil(names.length / gs);
-
         const cycleNumber = Math.floor(elapsed / groupsPerCycle);
         const indexInCycle = elapsed % groupsPerCycle;
         const groups = getCycleGroups(state, cycleNumber);
-
-        return {
-            absoluteStep: elapsed,
-            cycleNumber: cycleNumber,
-            indexInCycle: indexInCycle,
-            group: groups[indexInCycle] || []
-        };
+        return { group: groups[indexInCycle] || [] };
     }
 
     function getCurrentGroup(state) {
@@ -651,7 +443,6 @@
         if (winnerAnimating || winnerFinalized) return;
         const container = document.getElementById('currentName');
         container.innerHTML = '';
-
         if (!group || group.length === 0) {
             const span = document.createElement('span');
             span.className = 'name-single';
@@ -660,7 +451,6 @@
             adjustFontSize();
             return;
         }
-
         if (group.length === 1) {
             const span = document.createElement('span');
             span.className = 'name-single';
@@ -680,13 +470,11 @@
                 container.appendChild(span);
             });
         }
-
         adjustFontSize();
     }
 
     function flashGroupInList(group) {
         if (!group || !group.length) return;
-
         const allNameItems = document.querySelectorAll('#namesList [data-name]');
         allNameItems.forEach(item => {
             if (group.includes(item.dataset.name)) {
@@ -699,14 +487,12 @@
     }
 
     function groupsEqual(a, b) {
-        if (!Array.isArray(a) || !Array.isArray(b)) return false;
-        if (a.length !== b.length) return false;
+        if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
         return a.every((v, i) => v === b[i]);
     }
 
     function setDisplayGroup(group) {
         renderGroupInDisplay(group);
-
         if (remoteState && remoteState.isRunning && group && group.length && !groupsEqual(group, lastDisplayedGroup)) {
             flashGroupInList(group);
             lastDisplayedGroup = [...group];
@@ -716,9 +502,7 @@
     function pickFinalGroup(names, groupSize, randomArray) {
         if (!names || !names.length) return ['Losovanie zastavené'];
         const gs = Math.min(groupSize || 1, names.length);
-        if (gs === 1) {
-            return [names[randomArray[0] % names.length]];
-        }
+        if (gs === 1) return [names[randomArray[0] % names.length]];
         const shuffled = [...names];
         for (let i = shuffled.length - 1; i > 0; i--) {
             const r = randomArray[i % randomArray.length];
@@ -772,8 +556,7 @@
         names.forEach(name => {
             const isActive = activeNames.includes(name);
             const div = document.createElement('div');
-            div.className = 'name-chip text-sm px-4 py-2 rounded-3xl transition-all duration-200 ' +
-                (isActive ? 'bg-white/10 text-white' : 'absent');
+            div.className = 'name-chip text-sm px-4 py-2 rounded-3xl transition-all duration-200 ' + (isActive ? 'bg-white/10 text-white' : 'absent');
             div.textContent = name;
             div.dataset.name = name;
             container.appendChild(div);
@@ -809,45 +592,29 @@
     function playWinnerReveal() {
         winnerAnimating = true;
         const nameEl = document.getElementById('currentName');
-
         nameEl.style.transition = 'none';
-
         const normalSize = calcFontSizeOnly(260);
         const bigSize = Math.round(normalSize * 2);
-
         nameEl.style.fontSize = normalSize + 'px';
         nameEl.style.opacity = '1';
-
         let blinks = 0;
-
         function fadeOut() {
-            if (blinks >= 3) {
-                startSmoothGrowth();
-                return;
-            }
+            if (blinks >= 3) { startSmoothGrowth(); return; }
             animOpacity(nameEl, 1, 0.05, 1000, fadeIn);
         }
-
         function fadeIn() {
-            animOpacity(nameEl, 0.05, 1, 1000, () => {
-                blinks++;
-                setTimeout(fadeOut, 200);
-            });
+            animOpacity(nameEl, 0.05, 1, 1000, () => { blinks++; setTimeout(fadeOut, 200); });
         }
-
         function startSmoothGrowth() {
             const growDuration = 1600;
             const startTime = performance.now();
-
             function step(now) {
                 const t = Math.min((now - startTime) / growDuration, 1);
                 const eased = 1 - Math.pow(1 - t, 3);
                 nameEl.style.fontSize = Math.round(normalSize + (bigSize - normalSize) * eased) + 'px';
                 nameEl.style.opacity = String(0.05 + 0.95 * eased);
-
-                if (t < 1) {
-                    requestAnimationFrame(step);
-                } else {
+                if (t < 1) requestAnimationFrame(step);
+                else {
                     nameEl.style.fontSize = bigSize + 'px';
                     nameEl.style.opacity = '1';
                     winnerAnimating = false;
@@ -856,7 +623,6 @@
             }
             requestAnimationFrame(step);
         }
-
         fadeOut();
     }
 
@@ -888,11 +654,10 @@
     }
 
     function buildLotteryState(startTimestamp, targetTimestamp, targetTime, activeNames, groupSize) {
-        const randomBaseSeed = createRandomSeed();
         return {
             startTimestamp: startTimestamp,
             targetTimestamp: targetTimestamp,
-            randomBaseSeed: randomBaseSeed,
+            randomBaseSeed: createRandomSeed(),
             names: activeNames,
             allNames: allNames,
             activeNames: activeNames,
@@ -909,8 +674,7 @@
         const info = document.getElementById('runningInfo');
         info.classList.remove('hidden');
         document.getElementById('runningInfoHeading').textContent = 'Odpočítavanie bolo spustené';
-        document.getElementById('targetTimeDisplay').innerHTML =
-            `Zastaví sa o <strong class="text-4xl">${targetTime}</strong>`;
+        document.getElementById('targetTimeDisplay').innerHTML = `Zastaví sa o <strong class="text-4xl">${targetTime}</strong>`;
         document.getElementById('winnerResetBtn').classList.remove('hidden');
     }
 
@@ -922,86 +686,51 @@
 
     async function startLosovanie() {
         if (!await checkPassword('štart')) return;
-
         const activeNames = getActiveNames();
         const gs = selectedGroupSize;
-
-        if (activeNames.length < gs + 1) {
-            return alert(`Na losovanie skupín po ${gs} musia byť prítomné aspoň ${gs + 1} osoby.`);
-        }
-
+        if (activeNames.length < gs + 1) return alert(`Na losovanie skupín po ${gs} musia byť prítomné aspoň ${gs + 1} osoby.`);
         const targetTime = document.getElementById('targetTime').value;
         if (!targetTime) return alert('Zadajte čas zastavenia.');
-
         const startTimestamp = serverNow();
         const targetTimestamp = makeStopTimestampFromTime(targetTime, startTimestamp);
-
         lastDisplayedGroup = [];
         attendanceRenderedForState = false;
         timeInputActive = false;
-
-        db.ref('losovac').set({
-            ...buildLotteryState(startTimestamp, targetTimestamp, targetTime, activeNames, gs),
-            isRunning: true,
-            scheduled: false
-        });
+        db.ref('losovac').set({ ...buildLotteryState(startTimestamp, targetTimestamp, targetTime, activeNames, gs), isRunning: true, scheduled: false });
     }
 
     async function scheduleAutoStart() {
         if (!await checkPassword('naplánovanie automatického štartu')) return;
-
         const activeNames = getActiveNames();
         const gs = selectedGroupSize;
-
-        if (activeNames.length < gs + 1) {
-            return alert(`Na losovanie skupín po ${gs} musia byť prítomné aspoň ${gs + 1} osoby.`);
-        }
-
+        if (activeNames.length < gs + 1) return alert(`Na losovanie skupín po ${gs} musia byť prítomné aspoň ${gs + 1} osoby.`);
         const autoStartTime = document.getElementById('autoStartTime').value;
         const targetTime = document.getElementById('targetTime').value;
-        if (!autoStartTime) return alert('Zadajte čas automatického spustenia.');
-        if (!targetTime) return alert('Zadajte čas zastavenia.');
-
+        if (!autoStartTime || !targetTime) return alert('Zadajte čas automatického spustenia a zastavenia.');
         const now = serverNow();
         const scheduledStartTimestamp = makeTimestampFromTime(autoStartTime, now);
         const targetTimestamp = makeStopTimestampFromTime(targetTime, scheduledStartTimestamp);
-
         lastDisplayedGroup = [];
         attendanceRenderedForState = false;
         timeInputActive = false;
-
-        db.ref('losovac').set({
-            ...buildLotteryState(scheduledStartTimestamp, targetTimestamp, targetTime, activeNames, gs),
-            isRunning: false,
-            scheduled: true,
-            scheduledStartTimestamp: scheduledStartTimestamp,
-            autoStartTime: autoStartTime
-        });
-
+        db.ref('losovac').set({ ...buildLotteryState(scheduledStartTimestamp, targetTimestamp, targetTime, activeNames, gs), isRunning: false, scheduled: true, scheduledStartTimestamp: scheduledStartTimestamp, autoStartTime: autoStartTime });
         alert('Automatický štart bol naplánovaný na ' + autoStartTime + '.');
     }
 
     async function cancelAutoStart() {
-        if (!remoteState || !remoteState.scheduled) {
-            alert('Nie je naplánovaný žiadny automatický štart.');
-            return;
-        }
+        if (!remoteState || !remoteState.scheduled) return alert('Nie je naplánovaný žiadny automatický štart.');
         if (!await checkPassword('zrušenie automatického štartu')) return;
-
         db.ref('losovac').remove();
         remoteState = null;
         lastDisplayedGroup = [];
         attendanceRenderedForState = false;
         timeInputActive = false;
-
         const displayArea = document.getElementById('displayArea');
         displayArea.classList.add('stopped');
         displayArea.classList.remove('running', 'winner');
-
         renderGroupInDisplay([]);
         document.getElementById('timeInfo').textContent = '';
         document.getElementById('status').textContent = 'Pripojené';
-
         showControlPanel();
         document.getElementById('bottomNamesSection').style.display = 'block';
         renderAttendanceList(allNames, allNames);
@@ -1020,80 +749,47 @@
         const stopTimestamp = manuallyStopped ? serverNow() : null;
         const randomArray = new Uint32Array(8);
         crypto.getRandomValues(randomArray);
-
         db.ref('losovac').transaction(current => {
             if (!current || current.stopped || !current.isRunning) return current;
-
             const names = current.names || current.activeNames || [];
             const gs = current.groupSize || 1;
-
             if (!names.length) {
-                return {
-                    ...current,
-                    isRunning: false,
-                    scheduled: false,
-                    stopped: true,
-                    manuallyStopped: !!manuallyStopped,
-                    finalGroup: ['Losovanie zastavené'],
-                    stoppedAt: manuallyStopped ? stopTimestamp : current.targetTimestamp
-                };
+                return { ...current, isRunning: false, scheduled: false, stopped: true, manuallyStopped: !!manuallyStopped, finalGroup: ['Losovanie zastavené'], stoppedAt: manuallyStopped ? stopTimestamp : current.targetTimestamp };
             }
-
             const effectiveStopTimestamp = manuallyStopped ? stopTimestamp : current.targetTimestamp;
             const finalGroup = pickFinalGroup(names, gs, Array.from(randomArray));
-
-            return {
-                ...current,
-                isRunning: false,
-                scheduled: false,
-                stopped: true,
-                manuallyStopped: !!manuallyStopped,
-                finalGroup: finalGroup,
-                stoppedAt: effectiveStopTimestamp
-            };
+            return { ...current, isRunning: false, scheduled: false, stopped: true, manuallyStopped: !!manuallyStopped, finalGroup: finalGroup, stoppedAt: effectiveStopTimestamp };
         });
     }
 
     async function manualStop() {
-        if (!remoteState || !remoteState.isRunning) {
-            alert('Losovanie momentálne nebeží.');
-            return;
-        }
+        if (!remoteState || !remoteState.isRunning) return alert('Losovanie momentálne nebeží.');
         if (!await checkPassword('zastavenie')) return;
         stopLosovanie(true);
     }
 
     async function resetLosovanie() {
         if (!await checkPassword('reset')) return;
-
         db.ref('losovac').remove();
-
         remoteState = null;
         lastDisplayedGroup = [];
         allNames = [...DEFAULT_NAMES];
         attendanceRenderedForState = false;
         timeInputActive = false;
-
         if (intervalId) { clearInterval(intervalId); intervalId = null; }
         clearWinnerPhase();
-
         const displayArea = document.getElementById('displayArea');
         displayArea.classList.add('stopped');
         displayArea.classList.remove('running', 'winner');
-
         renderGroupInDisplay([]);
         document.getElementById('timeInfo').textContent = '';
         document.getElementById('status').textContent = 'Pripojené';
-
         showControlPanel();
         document.getElementById('bottomNamesSection').style.display = 'block';
         renderAttendanceList(allNames, allNames);
         renderNamesList(allNames, allNames);
         document.getElementById('winnerResetBtn').classList.add('hidden');
-
-        document.querySelectorAll('#namesList .name-chip.winner-name').forEach(el => {
-            el.classList.remove('winner-name');
-        });
+        document.querySelectorAll('#namesList .name-chip.winner-name').forEach(el => el.classList.remove('winner-name'));
     }
 
     function updateWinnerTimeInfo(fg) {
@@ -1109,10 +805,8 @@
     }
 
     function clearWinnerPhase() {
-        if (winnerPhaseInterval) {
-            clearInterval(winnerPhaseInterval);
-            winnerPhaseInterval = null;
-        }
+        if (winnerPhaseInterval) clearInterval(winnerPhaseInterval);
+        winnerPhaseInterval = null;
         winnerPhase = 0;
         winnerAnimating = false;
         winnerFinalized = false;
@@ -1164,7 +858,6 @@
             const totalSeconds = Math.ceil(remainingMs / 1000);
             const minutes = Math.floor(totalSeconds / 60);
             const seconds = totalSeconds % 60;
-
             renderGroupInDisplay(['Automatický štart naplánovaný']);
             timeInfo.textContent = `Spustí sa o ${remoteState.autoStartTime}. Zostáva: ${minutes}:${String(seconds).padStart(2, '0')}`;
             document.getElementById('status').textContent = `NAPLÁNOVANÉ na: ${remoteState.autoStartTime}`;
@@ -1194,7 +887,6 @@
             const seconds = totalSeconds % 60;
             timeInfo.textContent = `Zostáva: ${minutes}:${String(seconds).padStart(2, '0')}`;
 
-            // BLÍKANIE POSLEDNÝCH 30 SEKÚND – červeno-bielo
             if (remainingMs <= 30000) {
                 timeInfo.classList.add('countdown-critical');
             } else {
@@ -1212,11 +904,9 @@
             info.classList.remove('hidden');
 
             document.getElementById('runningInfoHeading').textContent = 'Odpočítavanie bolo zastavené';
-            document.getElementById('targetTimeDisplay').innerHTML = 
-                `Odpočítavanie sa zastavilo o <strong class="text-4xl">${remoteState.targetTime}</strong>`;
+            document.getElementById('targetTimeDisplay').innerHTML = `Odpočítavanie sa zastavilo o <strong class="text-4xl">${remoteState.targetTime}</strong>`;
 
             document.getElementById('winnerResetBtn').classList.remove('hidden');
-
             bottomSection.style.display = 'block';
 
             const fg = remoteState.finalGroup || ['Výber ukončený'];
@@ -1235,7 +925,6 @@
                 playWinnerReveal();
             }
 
-            // ŽIADNE BLÍKANIE – text ostane pevne biely
             timeInfo.classList.remove('countdown-critical');
 
             if (!attendanceRenderedForState) {
@@ -1305,37 +994,53 @@
         input.addEventListener('keydown', e => { if (e.key === 'Enter') unlockPage(); });
 
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible' && remoteState) {
-                tick();
-            }
+            if (document.visibilityState === 'visible' && remoteState) tick();
         });
+
+        // Weather + live time
+        loadWeather();
+        updateLiveTime();
+        setInterval(updateLiveTime, 60000);
+        setInterval(loadWeather, 10 * 60 * 1000);
 
         document.addEventListener('keydown', e => {
             if (e.ctrlKey && e.altKey && e.key === '0') {
                 document.getElementById('loginOverlay').style.display = 'none';
                 sessionStorage.setItem('losovacPageUnlocked', 'true');
             }
-            if (e.ctrlKey && e.altKey && e.key === '1') {
-                openTimeEditPanel();
-            }
+            if (e.ctrlKey && e.altKey && e.key === '1') openTimeEditPanel();
         });
     });
 
+    function setupTimeInputStability() {
+        ['autoStartTime', 'targetTime'].forEach(id => {
+            const input = document.getElementById(id);
+            if (!input) return;
+            ['focus','pointerdown','mousedown','touchstart'].forEach(ev => input.addEventListener(ev, () => timeInputActive = true));
+            ['blur','change'].forEach(ev => input.addEventListener(ev, () => setTimeout(() => timeInputActive = false, 400)));
+        });
+    }
+
+    async function checkPassword(actionText) {
+        const password = prompt('Zadajte heslo na ' + actionText + ':');
+        if (password === null) return false;
+        const hash = await sha256(password);
+        if (hash === PASSWORD_HASH) return true;
+        alert('Nesprávne heslo.');
+        return false;
+    }
+
     function openTimeEditPanel() {
         if (document.getElementById('timeEditOverlay')) return;
-
         const currentTime = remoteState && remoteState.targetTime ? remoteState.targetTime : '10:00';
-
         const overlay = document.createElement('div');
         overlay.id = 'timeEditOverlay';
         overlay.style.cssText = 'position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;';
-
         overlay.innerHTML = `
             <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border:1px solid rgba(255,255,255,0.2);border-radius:24px;padding:36px;width:340px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
                 <h2 style="color:#6ee7b7;font-size:1.4rem;font-weight:700;margin:0 0 8px;">Zmena času zastavenia</h2>
                 <p style="color:#c7d2fe;font-size:0.85rem;margin:0 0 24px;">Zadajte nový čas zastavenia losovania.</p>
-                <input type="time" id="timeEditInput" value="${currentTime}"
-                    style="width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:16px;padding:12px;font-size:2rem;text-align:center;color:white;outline:none;margin-bottom:20px;">
+                <input type="time" id="timeEditInput" value="${currentTime}" style="width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:16px;padding:12px;font-size:2rem;text-align:center;color:white;outline:none;margin-bottom:20px;">
                 <div style="display:flex;gap:10px;">
                     <button id="timeEditConfirm" style="flex:1;background:#10b981;border:none;border-radius:16px;padding:14px;color:white;font-size:1rem;font-weight:700;cursor:pointer;">POTVRDIŤ</button>
                     <button id="timeEditCancel" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:16px;padding:14px;color:white;font-size:1rem;font-weight:700;cursor:pointer;">ZRUŠIŤ</button>
@@ -1343,42 +1048,33 @@
                 <p id="timeEditError" style="color:#f87171;font-size:0.8rem;margin-top:12px;display:none;">Nesprávne heslo.</p>
             </div>
         `;
-
         document.body.appendChild(overlay);
-
         document.getElementById('timeEditCancel').addEventListener('click', () => overlay.remove());
         overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-
         document.getElementById('timeEditConfirm').addEventListener('click', async () => {
             const newTime = document.getElementById('timeEditInput').value;
             if (!newTime) return;
-
-            const password = prompt('Zadajte heslo na zmenu casu:');
+            const password = prompt('Zadajte heslo na zmenu času:');
             if (password === null) return;
             const hash = await sha256(password);
             if (hash !== PASSWORD_HASH) {
                 document.getElementById('timeEditError').style.display = 'block';
                 return;
             }
-
             if (!remoteState) {
                 document.getElementById('targetTime').value = newTime;
                 overlay.remove();
                 return;
             }
-
             const newTargetTimestamp = makeStopTimestampFromTime(newTime, serverNow());
-
             db.ref('losovac').transaction(current => {
                 if (!current) return current;
                 return { ...current, targetTime: newTime, targetTimestamp: newTargetTimestamp };
             });
-
             document.getElementById('targetTime').value = newTime;
             overlay.remove();
         });
     }
 </script>
-
 </body>
 </html>

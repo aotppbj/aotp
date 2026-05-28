@@ -318,7 +318,6 @@
             <h2 id="runningInfoHeading" class="text-3xl font-bold text-emerald-300">Odpočítavanie bolo spustené</h2>
             <p id="targetTimeDisplay" class="mt-6 text-xl"></p>
             
-            <!-- NOVÉ TLAČIDLO RESET – umiestnené pod bielym textom -->
             <button onclick="resetLosovanie()" id="winnerResetBtn"
                     class="hidden mt-8 w-full bg-slate-600 hover:bg-slate-700 text-white font-bold text-xl py-5 rounded-3xl">
                 RESET LOSOVAČA
@@ -1143,7 +1142,7 @@
             displayArea.classList.add('running');
             displayArea.classList.remove('stopped', 'winner');
             showRunningInfo(remoteState.targetTime);
-            bottomSection.style.display = 'none';
+            bottomSection.style.display = 'block';
 
             if (remainingMs <= 0) { stopLosovanie(false); return; }
 
@@ -1166,7 +1165,6 @@
             displayArea.classList.add('stopped', 'winner');
             displayArea.classList.remove('running');
 
-            // Rovnaká obrazovka ako počas losovania
             document.getElementById('controlPanel').classList.add('hidden');
             const info = document.getElementById('runningInfo');
             info.classList.remove('hidden');
@@ -1175,10 +1173,10 @@
             document.getElementById('targetTimeDisplay').innerHTML = 
                 `Odpočítavanie sa zastavilo o <strong class="text-4xl">${remoteState.targetTime}</strong>`;
 
-            // Zobraziť RESET tlačidlo
             document.getElementById('winnerResetBtn').classList.remove('hidden');
 
-            bottomSection.style.display = 'none';
+            // === ZMENENÉ: OKNO DOLE ZOSTANE VIDITEĽNÉ AJ PO ZLOSOVANÍ ===
+            bottomSection.style.display = 'block';
 
             const fg = remoteState.finalGroup || ['Výber ukončený'];
             setDisplayGroup(fg);

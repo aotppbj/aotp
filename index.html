@@ -1154,15 +1154,16 @@
             document.getElementById('status').textContent = 'LIVE – spustené';
 
         } else if (remoteState.stopped) {
+            // === VŽDY UDRŽUJEME ROVNAKÚ OBRAZOVKU AKO POČAS LOSOVANIA ===
             displayArea.classList.add('stopped', 'winner');
             displayArea.classList.remove('running');
 
-            // Rovnaká obrazovka ako počas losovania
+            // force layout every tick (to prevent reverting to start screen)
             document.getElementById('controlPanel').classList.add('hidden');
             const info = document.getElementById('runningInfo');
             info.classList.remove('hidden');
-            document.getElementById('targetTimeDisplay').innerHTML = `Odpočítavanie bolo ukončené, zastavilo sa o <strong class="text-4xl">${remoteState.targetTime}</strong>`;
-
+            document.getElementById('targetTimeDisplay').innerHTML = 
+                `Odpočítavanie bolo ukončené, zastavilo sa o <strong class="text-4xl">${remoteState.targetTime}</strong>`;
             bottomSection.style.display = 'none';
 
             const fg = remoteState.finalGroup || ['Výber ukončený'];

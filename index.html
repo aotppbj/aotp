@@ -356,37 +356,11 @@
     };
 
     const DEFAULT_NAMES = [
-        'Monika B.',
-        'Eva B.',
-        'Jana B.',
-        'Ján D.',
-        'Eva F.',
-        'Adriána F.',
-        'Lukáš G.',
-        'Daniela H.',
-        'Miroslav H.',
-        'Lenka H.',
-        'Slavomíra J.',
-        'Gabriela K.',
-        'Rastislav K.',
-        'Radka K.',
-        'Alena K.',
-        'Svetlana K.',
-        'Gabriel L.',
-        'Silvia M.',
-        'Zuzana M.',
-        'Marcela N.',
-        'Klaudia O.',
-        'Igor P.',
-        'Martin P.',
-        'Vladislav P.',
-        'Mária S.',
-        'Monika S.',
-        'Silvia S.',
-        'Eva S.',
-        'Gabriela Š.',
-        'Lenka Š.',
-        'Lenka V.',
+        'Monika B.', 'Eva B.', 'Jana B.', 'Ján D.', 'Eva F.', 'Adriána F.', 'Lukáš G.',
+        'Daniela H.', 'Miroslav H.', 'Lenka H.', 'Slavomíra J.', 'Gabriela K.', 'Rastislav K.',
+        'Radka K.', 'Alena K.', 'Svetlana K.', 'Gabriel L.', 'Silvia M.', 'Zuzana M.',
+        'Marcela N.', 'Klaudia O.', 'Igor P.', 'Martin P.', 'Vladislav P.', 'Mária S.',
+        'Monika S.', 'Silvia S.', 'Eva S.', 'Gabriela Š.', 'Lenka Š.', 'Lenka V.'
     ];
 
     let app, db;
@@ -408,73 +382,47 @@
     const PAGE_PASSWORD_HASH = 'b3f0523331975dc864413e5f186a70b9c54bebe0811de8a5f02cb8ed8fd6868a';
 
     async function sha256(text) {
-        const buf = await crypto.subtle.digest(
-            'SHA-256',
-            new TextEncoder().encode(text)
-        );
-        return Array.from(new Uint8Array(buf))
-            .map(b => b.toString(16).padStart(2, '0'))
-            .join('');
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
     function setGroupSize(n) {
         selectedGroupSize = n;
-        [1, 2, 3].forEach(i => {
-            document.getElementById('btn-select-' + i).classList.toggle('active', i === n);
-        });
+        [1, 2, 3].forEach(i => document.getElementById('btn-select-' + i).classList.toggle('active', i === n));
     }
 
     function updateCounters() {
         const checkboxes = document.querySelectorAll('#attendanceList input[type="checkbox"]');
-        const total    = checkboxes.length;
-        const active   = Array.from(checkboxes).filter(c => c.checked).length;
-        const inactive = total - active;
-        document.getElementById('countTotal').textContent    = total;
-        document.getElementById('countActive').textContent   = active;
-        document.getElementById('countInactive').textContent = inactive;
+        const total = checkboxes.length;
+        const active = Array.from(checkboxes).filter(c => c.checked).length;
+        document.getElementById('countTotal').textContent = total;
+        document.getElementById('countActive').textContent = active;
+        document.getElementById('countInactive').textContent = total - active;
     }
 
     function initFirebase() {
         app = firebase.initializeApp(firebaseConfig);
         db = firebase.database();
 
-        db.ref('.info/serverTimeOffset').on('value', snap => {
-            serverTimeOffset = snap.val() || 0;
-        });
-
-        db.ref('losovac').on('value', snap => {
-            remoteState = snap.val();
-            applyRemoteState(remoteState);
-        });
-
+        db.ref('.info/serverTimeOffset').on('value', snap => serverTimeOffset = snap.val() || 0);
+        db.ref('losovac').on('value', snap => { remoteState = snap.val(); applyRemoteState(remoteState); });
         db.ref('.info/connected').on('value', snap => {
-            if (!remoteState || !remoteState.isRunning) {
-                document.getElementById('status').textContent = snap.val() ? 'Pripojené' : 'Odpojené';
-            }
-
+            if (!remoteState || !remoteState.isRunning) document.getElementById('status').textContent = snap.val() ? 'Pripojené' : 'Odpojené';
             if (snap.val()) {
                 const presenceRef = db.ref('presence').push();
                 presenceRef.onDisconnect().remove();
                 presenceRef.set(true);
             }
         });
-
-        db.ref('presence').on('value', snap => {
-            const count = snap.numChildren();
-            document.getElementById('onlineCount2').textContent = count;
-        });
+        db.ref('presence').on('value', snap => document.getElementById('onlineCount2').textContent = snap.numChildren());
     }
 
     function setupTimeInputStability() {
         ['autoStartTime', 'targetTime'].forEach(id => {
             const input = document.getElementById(id);
             if (!input) return;
-            ['focus','pointerdown','mousedown','touchstart'].forEach(ev =>
-                input.addEventListener(ev, () => { timeInputActive = true; })
-            );
-            ['blur','change'].forEach(ev =>
-                input.addEventListener(ev, () => { setTimeout(() => { timeInputActive = false; }, 400); })
-            );
+            ['focus','pointerdown','mousedown','touchstart'].forEach(ev => input.addEventListener(ev, () => timeInputActive = true));
+            ['blur','change'].forEach(ev => input.addEventListener(ev, () => setTimeout(() => timeInputActive = false, 400)));
         });
     }
 
@@ -485,11 +433,11 @@
         if (hash === PAGE_PASSWORD_HASH) {
             sessionStorage.setItem('losovacPageUnlocked', 'true');
             document.getElementById('loginOverlay').style.display = 'none';
-            return;
+        } else {
+            error.classList.remove('hidden');
+            input.value = '';
+            input.focus();
         }
-        error.classList.remove('hidden');
-        input.value = '';
-        input.focus();
     }
 
     function serverNow() { return Date.now() + serverTimeOffset; }
@@ -538,8 +486,7 @@
     }
 
     function arraysEqual(a, b) {
-        if (!Array.isArray(a) || !Array.isArray(b)) return false;
-        if (a.length !== b.length) return false;
+        if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
         for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
         return true;
     }
@@ -547,27 +494,16 @@
     function getCycleNames(state, cycleNumber) {
         const names = state.names || state.activeNames || [];
         if (!names.length) return [];
-
         let attempt = 0;
         let result = [];
-
         do {
-            const seed =
-                (state.randomBaseSeed || 'fallback-seed') +
-                '|repeat|' + cycleNumber +
-                '|attempt|' + attempt +
-                '|names|' + names.join('|');
-
+            const seed = (state.randomBaseSeed || 'fallback-seed') + '|repeat|' + cycleNumber + '|attempt|' + attempt + '|names|' + names.join('|');
             result = shuffleBySeed(names, seed);
-
             if (cycleNumber === 0) return result;
-
             const previous = getCycleNames(state, cycleNumber - 1);
             if (!arraysEqual(result, previous)) return result;
-
             attempt++;
         } while (attempt < 20);
-
         return result;
     }
 
@@ -575,49 +511,31 @@
         const shuffled = getCycleNames(state, cycleNumber);
         const gs = state.groupSize || 1;
         if (gs === 1) return shuffled.map(n => [n]);
-
         const n = shuffled.length;
         const remainder = n % gs;
         const groups = [];
-
         const fullCount = remainder === 0 ? n : n - remainder;
-        for (let i = 0; i < fullCount; i += gs) {
-            groups.push(shuffled.slice(i, i + gs));
-        }
-
+        for (let i = 0; i < fullCount; i += gs) groups.push(shuffled.slice(i, i + gs));
         if (remainder !== 0) {
             const lastGroup = shuffled.slice(fullCount);
             const nextShuffled = getCycleNames(state, cycleNumber + 1);
-            const needed = gs - remainder;
-            const extra = nextShuffled.slice(0, needed);
+            const extra = nextShuffled.slice(0, gs - remainder);
             groups.push([...lastGroup, ...extra]);
         }
-
         return groups;
     }
 
     function getPositionAtTimestamp(state, timestamp) {
         const names = state.names || state.activeNames || [];
-        if (!state || names.length === 0) {
-            return { absoluteStep: 0, cycleNumber: 0, indexInCycle: 0, group: [] };
-        }
-
+        if (!state || names.length === 0) return { group: [] };
         const gs = state.groupSize || 1;
         const stepMs = state.stepMs || STEP_MS;
         const elapsed = Math.max(0, Math.floor((timestamp - state.startTimestamp) / stepMs));
-
         const groupsPerCycle = Math.ceil(names.length / gs);
-
         const cycleNumber = Math.floor(elapsed / groupsPerCycle);
         const indexInCycle = elapsed % groupsPerCycle;
         const groups = getCycleGroups(state, cycleNumber);
-
-        return {
-            absoluteStep: elapsed,
-            cycleNumber: cycleNumber,
-            indexInCycle: indexInCycle,
-            group: groups[indexInCycle] || []
-        };
+        return { group: groups[indexInCycle] || [] };
     }
 
     function getCurrentGroup(state) {
@@ -657,15 +575,12 @@
                 container.appendChild(span);
             });
         }
-
         adjustFontSize();
     }
 
     function flashGroupInList(group) {
         if (!group || !group.length) return;
-
-        const allNameItems = document.querySelectorAll('#namesList [data-name]');
-        allNameItems.forEach(item => {
+        document.querySelectorAll('#namesList [data-name]').forEach(item => {
             if (group.includes(item.dataset.name)) {
                 item.classList.remove('name-flash');
                 void item.offsetWidth;
@@ -676,14 +591,12 @@
     }
 
     function groupsEqual(a, b) {
-        if (!Array.isArray(a) || !Array.isArray(b)) return false;
-        if (a.length !== b.length) return false;
+        if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
         return a.every((v, i) => v === b[i]);
     }
 
     function setDisplayGroup(group) {
         renderGroupInDisplay(group);
-
         if (remoteState && remoteState.isRunning && group && group.length && !groupsEqual(group, lastDisplayedGroup)) {
             flashGroupInList(group);
             lastDisplayedGroup = [...group];
@@ -693,9 +606,7 @@
     function pickFinalGroup(names, groupSize, randomArray) {
         if (!names || !names.length) return ['Losovanie zastavené'];
         const gs = Math.min(groupSize || 1, names.length);
-        if (gs === 1) {
-            return [names[randomArray[0] % names.length]];
-        }
+        if (gs === 1) return [names[randomArray[0] % names.length]];
         const shuffled = [...names];
         for (let i = shuffled.length - 1; i > 0; i--) {
             const r = randomArray[i % randomArray.length];
@@ -749,8 +660,7 @@
         names.forEach(name => {
             const isActive = activeNames.includes(name);
             const div = document.createElement('div');
-            div.className = 'name-chip text-sm px-4 py-2 rounded-3xl transition-all duration-200 ' +
-                (isActive ? 'bg-white/10 text-white' : 'absent');
+            div.className = 'name-chip text-sm px-4 py-2 rounded-3xl transition-all duration-200 ' + (isActive ? 'bg-white/10 text-white' : 'absent');
             div.textContent = name;
             div.dataset.name = name;
             container.appendChild(div);
@@ -779,10 +689,11 @@
     function adjustFontSize() {
         if (winnerAnimating || winnerFinalized) return;
         const text = document.getElementById('currentName');
-        const size = calcFontSizeOnly(300);        // ← trochu väčšie písmo pre losované mená
+        const size = calcFontSizeOnly(300);
         text.style.fontSize = size + 'px';
     }
 
+    // === OPRÁVENÁ ANIMÁCIA – 3× bliknutie + OKAMŽITÉ zväčšenie pri treťom bliknutí ===
     function playWinnerReveal() {
         winnerAnimating = true;
         winnerFinalized = false;
@@ -800,46 +711,24 @@
 
         function fadeOut() {
             if (blinks >= 3) {
-                startGrowth();
+                // OKAMŽITÉ zväčšenie naraz – žiadny efekt, žiadne plynulé zväčšovanie
+                nameEl.style.fontSize = bigSize + 'px';
+                nameEl.style.opacity = '1';
+                winnerAnimating = false;
+                winnerFinalized = true;
                 return;
             }
             animOpacity(nameEl, 1, 0.08, 850, fadeIn);
         }
 
         function fadeIn() {
+            blinks++;
             animOpacity(nameEl, 0.08, 1, 850, () => {
-                blinks++;
                 setTimeout(fadeOut, 160);
             });
         }
 
-        function startGrowth() {
-            const growthDuration = 4500;           // ← dlhšie trvanie = výrazne hladšie zväčšovanie
-            const startTime = performance.now();
-
-            function animate(now) {
-                const elapsed = now - startTime;
-                const progress = Math.min(elapsed / growthDuration, 1);
-
-                const eased = 1 - Math.pow(1 - progress, 3);   // cubic ease-out (veľmi plynulé)
-                const currentSize = Math.round(normalSize + (bigSize - normalSize) * eased);
-                nameEl.style.fontSize = currentSize + 'px';
-                nameEl.style.opacity = '1';
-
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                } else {
-                    nameEl.style.fontSize = bigSize + 'px';
-                    nameEl.style.opacity = '1';
-                    winnerAnimating = false;
-                    winnerFinalized = true;
-                }
-            }
-
-            requestAnimationFrame(animate);
-        }
-
-        fadeOut();
+        fadeOut(); // spustí prvý cyklus
     }
 
     function animOpacity(el, from, to, duration, onDone) {
@@ -870,11 +759,10 @@
     }
 
     function buildLotteryState(startTimestamp, targetTimestamp, targetTime, activeNames, groupSize) {
-        const randomBaseSeed = createRandomSeed();
         return {
             startTimestamp: startTimestamp,
             targetTimestamp: targetTimestamp,
-            randomBaseSeed: randomBaseSeed,
+            randomBaseSeed: createRandomSeed(),
             names: activeNames,
             allNames: allNames,
             activeNames: activeNames,
@@ -890,8 +778,7 @@
         document.getElementById('controlPanel').classList.add('hidden');
         const info = document.getElementById('runningInfo');
         info.classList.remove('hidden');
-        document.getElementById('targetTimeDisplay').innerHTML =
-            `Zastaví sa o <strong class="text-4xl">${targetTime}</strong>`;
+        document.getElementById('targetTimeDisplay').innerHTML = `Zastaví sa o <strong class="text-4xl">${targetTime}</strong>`;
     }
 
     function showControlPanel() {
@@ -901,14 +788,9 @@
 
     async function startLosovanie() {
         if (!await checkPassword('štart')) return;
-
         const activeNames = getActiveNames();
         const gs = selectedGroupSize;
-
-        if (activeNames.length < gs + 1) {
-            return alert(`Na losovanie skupín po ${gs} musia byť prítomné aspoň ${gs + 1} osoby.`);
-        }
-
+        if (activeNames.length < gs + 1) return alert(`Na losovanie skupín po ${gs} musia byť prítomné aspoň ${gs + 1} osoby.`);
         const targetTime = document.getElementById('targetTime').value;
         if (!targetTime) return alert('Zadajte čas zastavenia.');
 
@@ -928,18 +810,13 @@
 
     async function scheduleAutoStart() {
         if (!await checkPassword('naplánovanie automatického štartu')) return;
-
         const activeNames = getActiveNames();
         const gs = selectedGroupSize;
-
-        if (activeNames.length < gs + 1) {
-            return alert(`Na losovanie skupín po ${gs} musia byť prítomné aspoň ${gs + 1} osoby.`);
-        }
+        if (activeNames.length < gs + 1) return alert(`Na losovanie skupín po ${gs} musia byť prítomné aspoň ${gs + 1} osoby.`);
 
         const autoStartTime = document.getElementById('autoStartTime').value;
         const targetTime = document.getElementById('targetTime').value;
-        if (!autoStartTime) return alert('Zadajte čas automatického spustenia.');
-        if (!targetTime) return alert('Zadajte čas zastavenia.');
+        if (!autoStartTime || !targetTime) return alert('Zadajte čas automatického spustenia a zastavenia.');
 
         const now = serverNow();
         const scheduledStartTimestamp = makeTimestampFromTime(autoStartTime, now);
@@ -961,10 +838,7 @@
     }
 
     async function cancelAutoStart() {
-        if (!remoteState || !remoteState.scheduled) {
-            alert('Nie je naplánovaný žiadny automatický štart.');
-            return;
-        }
+        if (!remoteState || !remoteState.scheduled) return alert('Nie je naplánovaný žiadny automatický štart.');
         if (!await checkPassword('zrušenie automatického štartu')) return;
 
         db.ref('losovac').remove();
@@ -1006,37 +880,18 @@
             const gs = current.groupSize || 1;
 
             if (!names.length) {
-                return {
-                    ...current,
-                    isRunning: false,
-                    scheduled: false,
-                    stopped: true,
-                    manuallyStopped: !!manuallyStopped,
-                    finalGroup: ['Losovanie zastavené'],
-                    stoppedAt: manuallyStopped ? stopTimestamp : current.targetTimestamp
-                };
+                return { ...current, isRunning: false, scheduled: false, stopped: true, manuallyStopped: !!manuallyStopped, finalGroup: ['Losovanie zastavené'], stoppedAt: manuallyStopped ? stopTimestamp : current.targetTimestamp };
             }
 
             const effectiveStopTimestamp = manuallyStopped ? stopTimestamp : current.targetTimestamp;
             const finalGroup = pickFinalGroup(names, gs, Array.from(randomArray));
 
-            return {
-                ...current,
-                isRunning: false,
-                scheduled: false,
-                stopped: true,
-                manuallyStopped: !!manuallyStopped,
-                finalGroup: finalGroup,
-                stoppedAt: effectiveStopTimestamp
-            };
+            return { ...current, isRunning: false, scheduled: false, stopped: true, manuallyStopped: !!manuallyStopped, finalGroup: finalGroup, stoppedAt: effectiveStopTimestamp };
         });
     }
 
     async function manualStop() {
-        if (!remoteState || !remoteState.isRunning) {
-            alert('Losovanie momentálne nebeží.');
-            return;
-        }
+        if (!remoteState || !remoteState.isRunning) return alert('Losovanie momentálne nebeží.');
         if (!await checkPassword('zastavenie')) return;
         stopLosovanie(true);
     }
@@ -1071,20 +926,14 @@
     function updateWinnerTimeInfo(fg) {
         const timeInfo = document.getElementById('timeInfo');
         const isMulti = fg && fg.length > 1;
-        if (winnerPhase === 0) {
-            timeInfo.textContent = 'Výber ukončený.';
-        } else {
-            timeInfo.textContent = isMulti
-                ? (fg.length >= 3 ? 'Výhercom gratulujeme! 😄😄😄' : 'Výhercom gratulujeme! 😄😄')
-                : 'Výhercovi gratulujeme! 😄';
-        }
+        timeInfo.textContent = winnerPhase === 0 
+            ? 'Výber ukončený.' 
+            : (isMulti ? (fg.length >= 3 ? 'Výhercom gratulujeme! 😄😄😄' : 'Výhercom gratulujeme! 😄😄') : 'Výhercovi gratulujeme! 😄');
     }
 
     function clearWinnerPhase() {
-        if (winnerPhaseInterval) {
-            clearInterval(winnerPhaseInterval);
-            winnerPhaseInterval = null;
-        }
+        if (winnerPhaseInterval) clearInterval(winnerPhaseInterval);
+        winnerPhaseInterval = null;
         winnerPhase = 0;
         winnerAnimating = false;
         winnerFinalized = false;
@@ -1103,7 +952,6 @@
 
         const displayArea = document.getElementById('displayArea');
         const timeInfo = document.getElementById('timeInfo');
-
         const stateAllNames = remoteState.allNames || remoteState.names || [];
         const stateActiveNames = remoteState.activeNames || remoteState.names || [];
 
@@ -1240,27 +1088,22 @@
                 document.getElementById('loginOverlay').style.display = 'none';
                 sessionStorage.setItem('losovacPageUnlocked', 'true');
             }
-            if (e.ctrlKey && e.altKey && e.key === '1') {
-                openTimeEditPanel();
-            }
+            if (e.ctrlKey && e.altKey && e.key === '1') openTimeEditPanel();
         });
     });
 
     function openTimeEditPanel() {
         if (document.getElementById('timeEditOverlay')) return;
-
         const currentTime = remoteState && remoteState.targetTime ? remoteState.targetTime : '10:00';
 
         const overlay = document.createElement('div');
         overlay.id = 'timeEditOverlay';
         overlay.style.cssText = 'position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;';
-
         overlay.innerHTML = `
             <div style="background:linear-gradient(135deg,#1e1b4b,#312e81);border:1px solid rgba(255,255,255,0.2);border-radius:24px;padding:36px;width:340px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
                 <h2 style="color:#6ee7b7;font-size:1.4rem;font-weight:700;margin:0 0 8px;">Zmena času zastavenia</h2>
                 <p style="color:#c7d2fe;font-size:0.85rem;margin:0 0 24px;">Zadajte nový čas zastavenia losovania.</p>
-                <input type="time" id="timeEditInput" value="${currentTime}"
-                    style="width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:16px;padding:12px;font-size:2rem;text-align:center;color:white;outline:none;margin-bottom:20px;">
+                <input type="time" id="timeEditInput" value="${currentTime}" style="width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:16px;padding:12px;font-size:2rem;text-align:center;color:white;outline:none;margin-bottom:20px;">
                 <div style="display:flex;gap:10px;">
                     <button id="timeEditConfirm" style="flex:1;background:#10b981;border:none;border-radius:16px;padding:14px;color:white;font-size:1rem;font-weight:700;cursor:pointer;">POTVRDIŤ</button>
                     <button id="timeEditCancel" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:16px;padding:14px;color:white;font-size:1rem;font-weight:700;cursor:pointer;">ZRUŠIŤ</button>
@@ -1268,7 +1111,6 @@
                 <p id="timeEditError" style="color:#f87171;font-size:0.8rem;margin-top:12px;display:none;">Nesprávne heslo.</p>
             </div>
         `;
-
         document.body.appendChild(overlay);
 
         document.getElementById('timeEditCancel').addEventListener('click', () => overlay.remove());
@@ -1277,28 +1119,20 @@
         document.getElementById('timeEditConfirm').addEventListener('click', async () => {
             const newTime = document.getElementById('timeEditInput').value;
             if (!newTime) return;
-
-            const password = prompt('Zadajte heslo na zmenu casu:');
+            const password = prompt('Zadajte heslo na zmenu času:');
             if (password === null) return;
             const hash = await sha256(password);
             if (hash !== PASSWORD_HASH) {
                 document.getElementById('timeEditError').style.display = 'block';
                 return;
             }
-
             if (!remoteState) {
                 document.getElementById('targetTime').value = newTime;
                 overlay.remove();
                 return;
             }
-
             const newTargetTimestamp = makeStopTimestampFromTime(newTime, serverNow());
-
-            db.ref('losovac').transaction(current => {
-                if (!current) return current;
-                return { ...current, targetTime: newTime, targetTimestamp: newTargetTimestamp };
-            });
-
+            db.ref('losovac').transaction(current => current ? { ...current, targetTime: newTime, targetTimestamp: newTargetTimestamp } : current);
             document.getElementById('targetTime').value = newTime;
             overlay.remove();
         });

@@ -237,10 +237,10 @@
             <h1 class="text-4xl font-bold text-emerald-300">AOTPP výber</h1>
         </div>
 
-        <!-- STREDA - počasie -->
+        <!-- STREDA - počasie (užšie, rovnako úzke ako online časť) -->
         <div class="flex-1 flex justify-center">
-            <div id="weatherWidget" class="flex items-center gap-3 bg-white/10 border border-white/20 rounded-3xl px-5 py-2 text-white text-lg font-medium">
-                <span id="weatherIcon" class="text-3xl">⛅</span>
+            <div id="weatherWidget" class="flex items-center gap-2 bg-white/10 border border-white/20 rounded-3xl px-3 py-1.5 text-white text-base font-medium">
+                <span id="weatherIcon" class="text-2xl">⛅</span>
                 <span id="weatherTemp" class="font-semibold">—°C</span>
                 <span id="weatherCity" class="text-emerald-300">Bardejov</span>
                 <span class="text-white/60 mx-1">•</span>
@@ -1323,7 +1323,7 @@
             }
         });
 
-        // === Počasie + čas (stred hlavičky) ===
+        // Počasie + čas
         loadWeather();
         updateLiveTime();
         setInterval(updateLiveTime, 60000);

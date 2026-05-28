@@ -623,6 +623,7 @@
     }
 
     function renderGroupInDisplay(group) {
+        if (winnerAnimating) return;
         const container = document.getElementById('currentName');
         container.innerHTML = '';
 
@@ -754,7 +755,8 @@
         });
     }
 
-    // Vypočíta max veľkosť písma ktorá sa zmestí do displayArea
+    let winnerAnimating = false;
+
     function calcFontSize(maxStart) {
         const container = document.getElementById('displayArea');
         const text = document.getElementById('currentName');
@@ -772,55 +774,47 @@
     }
 
     function adjustFontSize() {
+        if (winnerAnimating) return;
         calcFontSize(260);
     }
 
     function playWinnerReveal() {
+        winnerAnimating = true;
         const nameEl = document.getElementById('currentName');
 
-        // Normálna veľkosť = max čo sa zmestí pri 260px štarte
         const normalSize = calcFontSize(260);
-        // Veľká veľkosť = max čo sa zmestí pri 780px štarte (3x)
         const bigSize = calcFontSize(780);
 
-        // Vrátime na normalSize pred animáciou
         nameEl.style.fontSize = normalSize + 'px';
         nameEl.style.opacity = '1';
 
-        // Fáza 1: 3x pomalé bliknutie (fade out + fade in = 1 blik)
         let blinks = 0;
-        const halfBlink = 1000; // ms na jeden smer (out alebo in)
 
         function fadeOut() {
             if (blinks >= 3) { startGrow(); return; }
-            animOpacity(nameEl, 1, 0.05, halfBlink, fadeIn);
+            animOpacity(nameEl, 1, 0.05, 1000, fadeIn);
         }
         function fadeIn() {
-            animOpacity(nameEl, 0.05, 1, halfBlink, () => {
+            animOpacity(nameEl, 0.05, 1, 1000, () => {
                 blinks++;
-                setTimeout(fadeOut, 150);
+                setTimeout(fadeOut, 200);
             });
         }
 
-        // Fáza 2: zväčšovanie s blikaním
         function startGrow() {
             const growDuration = 3000;
             const startTime = performance.now();
-
             function step(now) {
-                const elapsed = now - startTime;
-                const t = Math.min(elapsed / growDuration, 1);
-                // ease out cubic
+                const t = Math.min((now - startTime) / growDuration, 1);
                 const eased = 1 - Math.pow(1 - t, 3);
                 nameEl.style.fontSize = Math.round(normalSize + (bigSize - normalSize) * eased) + 'px';
-                // blikanie počas rastu – sínusoida opacity
-                const blinkCycles = 4;
-                nameEl.style.opacity = String(0.25 + 0.75 * Math.abs(Math.sin(t * Math.PI * blinkCycles)));
+                nameEl.style.opacity = String(0.2 + 0.8 * Math.abs(Math.sin(t * Math.PI * 4)));
                 if (t < 1) {
                     requestAnimationFrame(step);
                 } else {
                     nameEl.style.fontSize = bigSize + 'px';
                     nameEl.style.opacity = '1';
+                    winnerAnimating = false;
                 }
             }
             requestAnimationFrame(step);

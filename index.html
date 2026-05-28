@@ -401,7 +401,7 @@
     let winnerPhase = 0;
     let winnerPhaseInterval = null;
     let winnerAnimating = false;
-    let winnerFinalized = false;          // NOVÉ – aby meno zostalo veľké
+    let winnerFinalized = false;
 
     const STEP_MS = 333;
     const PASSWORD_HASH     = '961b6dd3ede3cb8ecbaacbd68de040cd78eb2ed5889130cceb4c49268ea4d506';
@@ -625,7 +625,7 @@
     }
 
     function renderGroupInDisplay(group) {
-        if (winnerAnimating || winnerFinalized) return;   // zabráni resetu veľkosti po animácii
+        if (winnerAnimating || winnerFinalized) return;
         const container = document.getElementById('currentName');
         container.innerHTML = '';
 
@@ -779,7 +779,7 @@
     function adjustFontSize() {
         if (winnerAnimating || winnerFinalized) return;
         const text = document.getElementById('currentName');
-        const size = calcFontSizeOnly(260);
+        const size = calcFontSizeOnly(300);        // ← trochu väčšie písmo pre losované mená
         text.style.fontSize = size + 'px';
     }
 
@@ -790,7 +790,7 @@
 
         nameEl.style.transition = 'none';
 
-        const normalSize = calcFontSizeOnly(260);
+        const normalSize = calcFontSizeOnly(300);
         const bigSize = Math.round(normalSize * 2);
 
         nameEl.style.fontSize = normalSize + 'px';
@@ -814,17 +814,17 @@
         }
 
         function startGrowth() {
-            const growthDuration = 3400;
+            const growthDuration = 4500;           // ← dlhšie trvanie = výrazne hladšie zväčšovanie
             const startTime = performance.now();
 
             function animate(now) {
                 const elapsed = now - startTime;
                 const progress = Math.min(elapsed / growthDuration, 1);
 
-                const eased = 1 - Math.pow(1 - progress, 3);
+                const eased = 1 - Math.pow(1 - progress, 3);   // cubic ease-out (veľmi plynulé)
                 const currentSize = Math.round(normalSize + (bigSize - normalSize) * eased);
                 nameEl.style.fontSize = currentSize + 'px';
-                nameEl.style.opacity = '1';        // BEZ blikania počas rastu
+                nameEl.style.opacity = '1';
 
                 if (progress < 1) {
                     requestAnimationFrame(animate);
@@ -832,7 +832,7 @@
                     nameEl.style.fontSize = bigSize + 'px';
                     nameEl.style.opacity = '1';
                     winnerAnimating = false;
-                    winnerFinalized = true;        // zostane veľké natrvalo
+                    winnerFinalized = true;
                 }
             }
 

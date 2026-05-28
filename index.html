@@ -315,8 +315,14 @@
         </div>
 
         <div id="runningInfo" class="hidden lg:w-96 p-8 border-r border-white/20 flex flex-col justify-center items-center text-center">
-            <h2 class="text-3xl font-bold text-emerald-300">Odpočítavanie bolo spustené</h2>
+            <h2 id="runningInfoHeading" class="text-3xl font-bold text-emerald-300">Odpočítavanie bolo spustené</h2>
             <p id="targetTimeDisplay" class="mt-6 text-xl"></p>
+            
+            <!-- NOVÉ TLAČIDLO RESET – umiestnené pod bielym textom -->
+            <button onclick="resetLosovanie()" id="winnerResetBtn"
+                    class="hidden mt-8 w-full bg-slate-600 hover:bg-slate-700 text-white font-bold text-xl py-5 rounded-3xl">
+                RESET LOSOVAČA
+            </button>
         </div>
 
         <div class="flex-1 flex flex-col">
@@ -885,8 +891,10 @@
         document.getElementById('controlPanel').classList.add('hidden');
         const info = document.getElementById('runningInfo');
         info.classList.remove('hidden');
+        document.getElementById('runningInfoHeading').textContent = 'Odpočítavanie bolo spustené';
         document.getElementById('targetTimeDisplay').innerHTML =
             `Zastaví sa o <strong class="text-4xl">${targetTime}</strong>`;
+        document.getElementById('winnerResetBtn').classList.add('hidden');
     }
 
     function showControlPanel() {
@@ -1063,6 +1071,7 @@
         document.getElementById('bottomNamesSection').style.display = 'block';
         renderAttendanceList(allNames, allNames);
         renderNamesList(allNames, allNames);
+        document.getElementById('winnerResetBtn').classList.add('hidden');
     }
 
     function updateWinnerTimeInfo(fg) {
@@ -1154,16 +1163,21 @@
             document.getElementById('status').textContent = 'LIVE – spustené';
 
         } else if (remoteState.stopped) {
-            // === VŽDY UDRŽUJEME ROVNAKÚ OBRAZOVKU AKO POČAS LOSOVANIA ===
             displayArea.classList.add('stopped', 'winner');
             displayArea.classList.remove('running');
 
-            // force layout every tick (to prevent reverting to start screen)
+            // Rovnaká obrazovka ako počas losovania
             document.getElementById('controlPanel').classList.add('hidden');
             const info = document.getElementById('runningInfo');
             info.classList.remove('hidden');
+
+            document.getElementById('runningInfoHeading').textContent = 'Odpočítavanie bolo zastavené';
             document.getElementById('targetTimeDisplay').innerHTML = 
-                `Odpočítavanie bolo ukončené, zastavilo sa o <strong class="text-4xl">${remoteState.targetTime}</strong>`;
+                `Odpočítavanie sa zastavilo o <strong class="text-4xl">${remoteState.targetTime}</strong>`;
+
+            // Zobraziť RESET tlačidlo
+            document.getElementById('winnerResetBtn').classList.remove('hidden');
+
             bottomSection.style.display = 'none';
 
             const fg = remoteState.finalGroup || ['Výber ukončený'];
@@ -1196,6 +1210,7 @@
             document.getElementById('status').textContent = 'Pripojené';
             showControlPanel();
             bottomSection.style.display = 'block';
+            document.getElementById('winnerResetBtn').classList.add('hidden');
 
             if (!attendanceRenderedForState) {
                 renderAttendanceList(allNames, allNames);
@@ -1219,6 +1234,7 @@
             document.getElementById('timeInfo').textContent = '';
             document.getElementById('status').textContent = 'Pripojené';
             document.getElementById('displayArea').classList.remove('winner');
+            document.getElementById('winnerResetBtn').classList.add('hidden');
             lastDisplayedGroup = [];
             attendanceRenderedForState = true;
             return;

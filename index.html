@@ -84,7 +84,6 @@
             animation: nameFlashRed 0.45s ease-out;
         }
 
-        /* NOVÉ – trvalé zelené svietenie víťazných mien v spodnom zozname */
         .name-chip.winner-name {
             background: #10b981 !important;
             color: white !important;
@@ -326,9 +325,10 @@
             <h2 id="runningInfoHeading" class="text-3xl font-bold text-emerald-300">Odpočítavanie bolo spustené</h2>
             <p id="targetTimeDisplay" class="mt-6 text-xl"></p>
             
+            <!-- RESET tlačidlo viditeľné aj počas losovania -->
             <button onclick="resetLosovanie()" id="winnerResetBtn"
                     class="hidden mt-8 w-full bg-slate-600 hover:bg-slate-700 text-white font-bold text-xl py-5 rounded-3xl">
-                RESET LOSOVAČA
+                RESET
             </button>
         </div>
 
@@ -901,12 +901,13 @@
         document.getElementById('runningInfoHeading').textContent = 'Odpočítavanie bolo spustené';
         document.getElementById('targetTimeDisplay').innerHTML =
             `Zastaví sa o <strong class="text-4xl">${targetTime}</strong>`;
-        document.getElementById('winnerResetBtn').classList.add('hidden');
+        document.getElementById('winnerResetBtn').classList.remove('hidden');  // viditeľné aj počas losovania
     }
 
     function showControlPanel() {
         document.getElementById('controlPanel').classList.remove('hidden');
         document.getElementById('runningInfo').classList.add('hidden');
+        document.getElementById('winnerResetBtn').classList.add('hidden');
     }
 
     async function startLosovanie() {
@@ -1080,7 +1081,6 @@
         renderNamesList(allNames, allNames);
         document.getElementById('winnerResetBtn').classList.add('hidden');
 
-        // odstrániť trvalé zelené svietenie
         document.querySelectorAll('#namesList .name-chip.winner-name').forEach(el => {
             el.classList.remove('winner-name');
         });
@@ -1109,11 +1109,8 @@
     }
 
     function highlightPermanentWinner(fg) {
-        // odstrániť staré zvýraznenie
         document.querySelectorAll('#namesList .name-chip.winner-name').forEach(el => el.classList.remove('winner-name'));
-
         if (!fg || !fg.length) return;
-
         fg.forEach(name => {
             const chip = document.querySelector(`#namesList .name-chip[data-name="${name}"]`);
             if (chip) chip.classList.add('winner-name');
@@ -1161,6 +1158,7 @@
             renderGroupInDisplay(['Automatický štart naplánovaný']);
             timeInfo.textContent = `Spustí sa o ${remoteState.autoStartTime}. Zostáva: ${minutes}:${String(seconds).padStart(2, '0')}`;
             document.getElementById('status').textContent = `NAPLÁNOVANÉ na: ${remoteState.autoStartTime}`;
+            document.getElementById('winnerResetBtn').classList.add('hidden');
 
         } else if (remoteState.isRunning) {
             const remainingMs = remoteState.targetTimestamp - serverNow();
@@ -1200,12 +1198,10 @@
 
             document.getElementById('winnerResetBtn').classList.remove('hidden');
 
-            bottomSection.style.display = 'block';   // zostane viditeľné
+            bottomSection.style.display = 'block';
 
             const fg = remoteState.finalGroup || ['Výber ukončený'];
             setDisplayGroup(fg);
-
-            // trvalé zelené svietenie víťazných mien dole
             highlightPermanentWinner(fg);
 
             document.getElementById('status').textContent = `ZASTAVENÉ na: ${fg.join(' & ')}`;

@@ -68,6 +68,17 @@
             animation: none;
         }
 
+        /* NOVÉ: pomalé blikanie času pri ≤ 30 sekundách */
+        @keyframes countdownCritical {
+            0%, 100% { color: #ffffff; }
+            50%      { color: #ef4444; }
+        }
+
+        .countdown-critical {
+            animation: countdownCritical 1.4s infinite ease-in-out;
+            font-weight: 700;
+        }
+
         #displayArea {
             height: 360px;
             position: relative;
@@ -1181,6 +1192,14 @@
             const minutes = Math.floor(totalSeconds / 60);
             const seconds = totalSeconds % 60;
             timeInfo.textContent = `Zostáva: ${minutes}:${String(seconds).padStart(2, '0')}`;
+
+            // === NOVÉ: blikanie pri ≤ 30 sekundách ===
+            if (remainingMs <= 30000) {
+                timeInfo.classList.add('countdown-critical');
+            } else {
+                timeInfo.classList.remove('countdown-critical');
+            }
+
             document.getElementById('status').textContent = 'LIVE – spustené';
 
         } else if (remoteState.stopped) {
@@ -1280,10 +1299,9 @@
         }
         input.addEventListener('keydown', e => { if (e.key === 'Enter') unlockPage(); });
 
-        // === FIX PROTI ZASEKNUTIU V POZADÍ ===
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible' && remoteState) {
-                tick();                     // okamžite aktualizujeme aktuálne meno
+                tick();
             }
         });
 

@@ -230,11 +230,15 @@
 
 <div class="max-w-6xl w-full bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
 
-    <div class="px-8 py-6 border-b border-white/20 flex justify-between items-center">
+    <div class="px-8 py-6 border-b border-white/20 flex items-center">
+        
+        <!-- ĽAVÁ ČASŤ - logo -->
         <div class="flex items-center gap-3">
             <h1 class="text-4xl font-bold text-emerald-300">AOTPP výber</h1>
-            
-            <!-- === POČASIE (Bardejov) === -->
+        </div>
+
+        <!-- STREDA - počasie -->
+        <div class="flex-1 flex justify-center">
             <div id="weatherWidget" class="flex items-center gap-3 bg-white/10 border border-white/20 rounded-3xl px-5 py-2 text-white text-lg font-medium">
                 <span id="weatherIcon" class="text-3xl">⛅</span>
                 <span id="weatherTemp" class="font-semibold">—°C</span>
@@ -244,6 +248,7 @@
             </div>
         </div>
 
+        <!-- PRAVÁ ČASŤ - online -->
         <div class="flex items-center gap-3">
             <div class="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 border border-white/20 rounded-2xl text-sm font-semibold text-white/80">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -441,39 +446,13 @@
     const PAGE_PASSWORD_HASH = 'b3f0523331975dc864413e5f186a70b9c54bebe0811de8a5f02cb8ed8fd6868a';
 
     async function sha256(text) {
-        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    // === POČASIE + ČAS (Open-Meteo – bez kľúča) ===
-    async function loadWeather() {
-        try {
-            const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=49.292&longitude=21.276&current_weather=true&timezone=Europe/Bratislava');
-            const data = await res.json();
-            const current = data.current_weather;
-            
-            let icon = '⛅';
-            const code = current.weathercode;
-            if ([0,1].includes(code)) icon = '☀️';
-            else if ([2,3].includes(code)) icon = '⛅';
-            else if ([45,48].includes(code)) icon = '🌫️';
-            else if ([51,53,55,61,63,65,80,81,82].includes(code)) icon = '🌧️';
-            else if ([71,73,75,77,85,86].includes(code)) icon = '❄️';
-            else if ([95,96,99].includes(code)) icon = '⛈️';
-
-            document.getElementById('weatherIcon').textContent = icon;
-            document.getElementById('weatherTemp').textContent = `${Math.round(current.temperature)}°C`;
-        } catch(e) {
-            document.getElementById('weatherIcon').textContent = '⛅';
-            document.getElementById('weatherTemp').textContent = '—°C';
-        }
-    }
-
-    function updateLiveTime() {
-        const now = new Date();
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        document.getElementById('liveTime').textContent = `${hours}:${minutes}`;
+        const buf = await crypto.subtle.digest(
+            'SHA-256',
+            new TextEncoder().encode(text)
+        );
+        return Array.from(new Uint8Array(buf))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
     }
 
     function setGroupSize(n) {
@@ -1344,7 +1323,7 @@
             }
         });
 
-        // === Počasie a čas ===
+        // === Počasie + čas (stred hlavičky) ===
         loadWeather();
         updateLiveTime();
         setInterval(updateLiveTime, 60000);
@@ -1360,6 +1339,37 @@
             }
         });
     });
+
+    // === POČASIE (Open-Meteo) ===
+    async function loadWeather() {
+        try {
+            const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=49.292&longitude=21.276&current_weather=true&timezone=Europe/Bratislava');
+            const data = await res.json();
+            const current = data.current_weather;
+            
+            let icon = '⛅';
+            const code = current.weathercode;
+            if ([0,1].includes(code)) icon = '☀️';
+            else if ([2,3].includes(code)) icon = '⛅';
+            else if ([45,48].includes(code)) icon = '🌫️';
+            else if ([51,53,55,61,63,65,80,81,82].includes(code)) icon = '🌧️';
+            else if ([71,73,75,77,85,86].includes(code)) icon = '❄️';
+            else if ([95,96,99].includes(code)) icon = '⛈️';
+
+            document.getElementById('weatherIcon').textContent = icon;
+            document.getElementById('weatherTemp').textContent = `${Math.round(current.temperature)}°C`;
+        } catch(e) {
+            document.getElementById('weatherIcon').textContent = '⛅';
+            document.getElementById('weatherTemp').textContent = '—°C';
+        }
+    }
+
+    function updateLiveTime() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('liveTime').textContent = `${hours}:${minutes}`;
+    }
 
     function openTimeEditPanel() {
         if (document.getElementById('timeEditOverlay')) return;
